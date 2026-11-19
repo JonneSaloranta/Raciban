@@ -2,6 +2,8 @@
 
 A kanban board with built-in RACI responsibilities, in a single HTML file. No install, no server, no account.
 
+![Kanban board](docs/board.png)
+
 ## Features
 
 - Multiple projects, each with its own kanban board
@@ -11,6 +13,10 @@ A kanban board with built-in RACI responsibilities, in a single HTML file. No in
 - Project archiving, with each archived project saved as a separate JSON file
 - JSON export and import
 - Light and dark theme
+
+| Calendar | RACI matrix |
+|---|---|
+| ![Calendar view](docs/calendar.png) | ![RACI matrix view](docs/raci-matrix.png) |
 
 ## Usage
 
