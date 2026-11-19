@@ -109,6 +109,13 @@
   .side-footer { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
   .side-footer button { flex: 1; font-size: 12px; }
   .side-footer button.wide { flex-basis: 100%; }
+  .backup-reminder { margin-top: 12px; padding: 10px 12px; border-radius: 8px; font-size: 12px; line-height: 1.45;
+    background: var(--banner-bg); color: var(--banner-ink); border: 1px solid var(--banner-line); }
+  .backup-reminder strong { display: block; margin-bottom: 4px; font-size: 13px; }
+  .backup-reminder .actions { display: flex; gap: 6px; margin-top: 8px; }
+  .backup-reminder .actions button { flex: 1; font-size: 12px; padding: 4px 6px; }
+  .backup-status { font-size: 11px; color: var(--muted); text-align: center; margin-top: 6px; width: 100%; }
+  .backup-status.warn { color: var(--over-ink); }
   .app-footer { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line);
     font-size: 11px; color: var(--muted); text-align: center; line-height: 1.6; }
   .app-footer a { color: var(--muted); text-decoration: none; }
@@ -276,11 +283,13 @@
     <div class="archive-folder" id="archiveFolder"></div>
     <ul id="archiveList"></ul>
   </details>
+  <div class="backup-reminder" id="backupReminder" hidden></div>
   <div class="side-footer">
     <button id="exportAllSeparate" class="wide" title="Tallentaa jokaisen projektin ja arkistoidun projektin omaksi JSON-tiedostokseen">⬇ Vie kaikki erillisinä tiedostoina</button>
     <button id="exportBtn" title="Lataa kaikki data yhtenä JSON-varmuuskopiona">Vie varmuuskopio</button>
     <button id="importBtn" title="Tuo varmuuskopio tai yksi/useampi projektitiedosto">Tuo</button>
     <input type="file" id="importFile" accept=".json,application/json" multiple hidden>
+    <div class="backup-status" id="backupStatus"></div>
   </div>
   <footer class="app-footer">
     <a href="https://github.com/JonneSaloranta/Raciban" target="_blank" rel="noopener">GitHub</a>
@@ -471,6 +480,7 @@ const initials = name => name.split(/\s+/).filter(Boolean).slice(0, 2).map(s => 
 
 function save() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  markChanged();
 }
 
 const activeProject = () => state.projects.find(p => p.id === state.activeId);
@@ -1215,6 +1225,7 @@ async function exportAllSeparate() {
       await w.write(JSON.stringify(f.data, null, 2));
       await w.close();
     }
+    markBackedUp();
     alert(`Tallennettiin ${files.length} tiedostoa kansioon ${parent.name}/${dir.name}\n` +
       `(${state.projects.length} projektia, ${state.archive.length} arkistoitua)`);
   } else {
@@ -1224,6 +1235,7 @@ async function exportAllSeparate() {
       downloadJson(f.data, f.name);
       await new Promise(r => setTimeout(r, 300)); // selaimet estävät liian nopeat peräkkäiset lataukset
     }
+    markBackedUp();
   }
 }
 
@@ -1231,6 +1243,7 @@ $('#exportAllSeparate').onclick = () => exportAllSeparate().catch(err => alert('
 
 $('#exportBtn').onclick = () => {
   downloadJson(state, `raciban-${new Date().toISOString().slice(0, 10)}.json`);
+  markBackedUp();
 };
 
 $('#importBtn').onclick = () => $('#importFile').click();
@@ -1298,6 +1311,70 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
   updateThemeButton();
 });
 updateThemeButton();
+
+// ---------- Varmuuskopiomuistutus ----------
+// Muistutetaan, kun vanhin varmuuskopioimaton muutos on yli BACKUP_REMIND_DAYS päivää vanha.
+const BACKUP_KEY = 'simple-kanban-backup';
+const BACKUP_REMIND_DAYS = 7;
+const DAY = 864e5;
+
+function backupInfo() {
+  try { return JSON.parse(localStorage.getItem(BACKUP_KEY)) ?? {}; } catch { return {}; }
+}
+function setBackupInfo(info) {
+  localStorage.setItem(BACKUP_KEY, JSON.stringify(info));
+  renderBackupReminder();
+}
+const hasData = () => state.projects.length > 0 || state.archive.length > 0;
+
+function markChanged() {
+  const info = backupInfo();
+  if (!info.dirtySince) setBackupInfo({ ...info, dirtySince: new Date().toISOString() });
+}
+
+function markBackedUp() {
+  setBackupInfo({ last: new Date().toISOString(), dirtySince: null, snoozeUntil: null });
+}
+
+const daysAgo = iso => Math.floor((Date.now() - new Date(iso)) / DAY);
+const relDays = n => n <= 0 ? 'tänään' : n === 1 ? 'eilen' : `${n} päivää sitten`;
+
+function renderBackupReminder() {
+  const info = backupInfo();
+  const box = $('#backupReminder');
+  const status = $('#backupStatus');
+
+  const dirtyDays = info.dirtySince ? daysAgo(info.dirtySince) : 0;
+  const snoozed = info.snoozeUntil && new Date(info.snoozeUntil) > new Date();
+  const remind = hasData() && info.dirtySince && dirtyDays >= BACKUP_REMIND_DAYS && !snoozed;
+
+  status.textContent = !hasData() ? ''
+    : info.last ? `Viimeisin varmuuskopio: ${relDays(daysAgo(info.last))}` + (info.dirtySince ? ' (muutoksia sen jälkeen)' : '')
+    : 'Varmuuskopiota ei ole vielä otettu';
+  status.classList.toggle('warn', !!remind);
+
+  box.hidden = !remind;
+  if (!remind) return;
+  box.innerHTML = '';
+  const backup = el('button', { className: 'primary', textContent: '💾 Ota varmuuskopio' });
+  backup.onclick = () => $('#exportBtn').click();
+  const later = el('button', { textContent: 'Muistuta huomenna' });
+  later.onclick = () => setBackupInfo({ ...info, snoozeUntil: new Date(Date.now() + DAY).toISOString() });
+  box.append(
+    el('strong', { textContent: '⚠ Muista varmuuskopio' }),
+    info.last
+      ? `Edellinen varmuuskopio on otettu ${relDays(daysAgo(info.last))}, ja sen jälkeen on tehty muutoksia. `
+      : 'Et ole vielä ottanut varmuuskopiota. ',
+    'Tiedot ovat vain tämän selaimen muistissa ja katoavat, jos selaimen tiedot tyhjennetään.',
+    el('div', { className: 'actions' }, backup, later));
+}
+
+// Olemassa olevalle datalle, jota ei ole koskaan varmuuskopioitu, muistutetaan heti
+if (!localStorage.getItem(BACKUP_KEY) && hasData()) {
+  localStorage.setItem(BACKUP_KEY, JSON.stringify({ dirtySince: new Date(0).toISOString() }));
+}
+setInterval(renderBackupReminder, 60 * 60 * 1000); // tarkistetaan tunnin välein, jos sivu on pitkään auki
+renderBackupReminder();
 
 render();
 initArchiveDir();
