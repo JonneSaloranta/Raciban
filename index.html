@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Simple Kanban</title>
+<title>Raciban</title>
 <script>
   // Tallennettu valinta (light/dark) tai järjestelmän asetus
   document.documentElement.dataset.theme = localStorage.getItem('simple-kanban-theme')
@@ -109,6 +109,10 @@
   .side-footer { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
   .side-footer button { flex: 1; font-size: 12px; }
   .side-footer button.wide { flex-basis: 100%; }
+  .app-footer { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line);
+    font-size: 11px; color: var(--muted); text-align: center; line-height: 1.6; }
+  .app-footer a { color: var(--muted); text-decoration: none; }
+  .app-footer a:hover { color: var(--ink); text-decoration: underline; }
   .filter { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--muted); }
   .filter select { font: inherit; padding: 5px 6px; border: 1px solid var(--line); border-radius: 6px;
     background: var(--panel); color: var(--ink); }
@@ -263,7 +267,7 @@
 <body>
 
 <aside>
-  <h1>▦ Kanban <button class="icon theme-toggle" id="themeToggle"></button></h1>
+  <h1>▦ Raciban <button class="icon theme-toggle" id="themeToggle"></button></h1>
   <h2>Projektit</h2>
   <ul id="projectList"></ul>
   <button class="primary" id="addProject">+ Uusi projekti</button>
@@ -278,6 +282,13 @@
     <button id="importBtn" title="Tuo varmuuskopio tai yksi/useampi projektitiedosto">Tuo</button>
     <input type="file" id="importFile" accept=".json,application/json" multiple hidden>
   </div>
+  <footer class="app-footer">
+    <a href="https://github.com/JonneSaloranta/Raciban" target="_blank" rel="noopener">GitHub</a>
+    ·
+    <a href="https://github.com/JonneSaloranta/Raciban/issues" target="_blank" rel="noopener" title="Ilmoita bugista tai ehdota uutta ominaisuutta">Issues</a>
+    ·
+    <a href="https://github.com/JonneSaloranta/Raciban/blob/master/LICENSE" target="_blank" rel="noopener" title="GNU Affero General Public License v3.0">AGPLv3</a>
+  </footer>
 </aside>
 
 <main>
@@ -1198,7 +1209,7 @@ async function exportAllSeparate() {
     try { parent = await showDirectoryPicker({ id: 'kanban-vienti', mode: 'readwrite' }); }
     catch { return; } // käyttäjä perui
     const stamp = new Date().toISOString().slice(0, 16).replace('T', '_').replace(':', '');
-    const dir = await parent.getDirectoryHandle(`kanban-vienti-${stamp}`, { create: true });
+    const dir = await parent.getDirectoryHandle(`raciban-vienti-${stamp}`, { create: true });
     for (const f of files) {
       const w = await (await dir.getFileHandle(f.name, { create: true })).createWritable();
       await w.write(JSON.stringify(f.data, null, 2));
@@ -1219,7 +1230,7 @@ async function exportAllSeparate() {
 $('#exportAllSeparate').onclick = () => exportAllSeparate().catch(err => alert('Vienti epäonnistui: ' + err.message));
 
 $('#exportBtn').onclick = () => {
-  downloadJson(state, `kanban-${new Date().toISOString().slice(0, 10)}.json`);
+  downloadJson(state, `raciban-${new Date().toISOString().slice(0, 10)}.json`);
 };
 
 $('#importBtn').onclick = () => $('#importFile').click();
@@ -1250,7 +1261,7 @@ $('#importFile').onchange = async e => {
   let active = 0, archived = 0, skipped = 0;
   for (const { file, data } of parsed) {
     if (data.type !== 'simple-kanban-project' || !data.project?.columns) {
-      errors.push(`${file.name}: ei Kanban-projektitiedosto`);
+      errors.push(`${file.name}: ei Raciban-projektitiedosto`);
       continue;
     }
     const p = normalize({ projects: [data.project] }).projects[0];
