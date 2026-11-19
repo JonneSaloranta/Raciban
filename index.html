@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simple Kanban</title>
+<script>
+  // Tallennettu valinta (light/dark) tai järjestelmän asetus
+  document.documentElement.dataset.theme = localStorage.getItem('simple-kanban-theme')
+    || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+</script>
+<style>
+  :root {
+    --bg: #f4f1ea;
+    --panel: #fffdf8;
+    --ink: #2b2a27;
+    --muted: #8a857a;
+    --line: #e2ddd1;
+    --accent: #d9534f;
+    --col: #ebe6da;
+    --shadow: 0 1px 2px rgba(0,0,0,.08), 0 2px 6px rgba(0,0,0,.05);
+    --shadow-hover: 0 2px 8px rgba(0,0,0,.12);
+    --input: #fff;
+    --hover: rgba(0,0,0,.05);
+    --drop: #eef4ff;
+    --cal-other: #f9f7f2;
+    --cal-weekend: #fbf9f4;
+    --banner-bg: #fff3cd; --banner-ink: #7a5a00; --banner-line: #f0dc9a;
+    --soon-bg: #fdebc8; --soon-ink: #8a5a00;
+    --over-bg: #f8d7d6; --over-ink: #a12622;
+    --done-bg: #dff0d8; --done-ink: #3c763d;
+    color-scheme: light;
+  }
+  :root[data-theme="dark"] {
+    --bg: #1b1a18;
+    --panel: #252421;
+    --ink: #ebe7de;
+    --muted: #9b968b;
+    --line: #3a3833;
+    --accent: #ef6f6a;
+    --col: #2d2b27;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 2px 6px rgba(0,0,0,.3);
+    --shadow-hover: 0 2px 10px rgba(0,0,0,.55);
+    --input: #1e1d1b;
+    --hover: rgba(255,255,255,.06);
+    --drop: #26324a;
+    --cal-other: #201f1c;
+    --cal-weekend: #23221f;
+    --banner-bg: #3a3220; --banner-ink: #f0d58a; --banner-line: #5a4b26;
+    --soon-bg: #4a3a1a; --soon-ink: #f5c46a;
+    --over-bg: #4d2523; --over-ink: #ff8f8a;
+    --done-bg: #24402a; --done-ink: #8fd49a;
+    color-scheme: dark;
+  }
+  body, aside, header, .column, .card, dialog, .cal-day { transition: background-color .2s, color .2s; }
+  .theme-toggle { float: right; font-size: 16px; padding: 0 4px; line-height: 1; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; height: 100vh; display: flex;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg); color: var(--ink);
+  }
+  button {
+    font: inherit; cursor: pointer; border: 1px solid var(--line);
+    background: var(--panel); color: var(--ink); border-radius: 6px; padding: 6px 10px;
+  }
+  button:hover { border-color: var(--muted); }
+  button.primary { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+  button.danger { color: var(--accent); }
+  button.icon { border: none; background: none; padding: 2px 6px; color: var(--muted); }
+  button.icon:hover { color: var(--ink); }
+  input, textarea {
+    font: inherit; width: 100%; padding: 8px; border: 1px solid var(--line);
+    border-radius: 6px; background: var(--input); color: var(--ink);
+  }
+  textarea { resize: vertical; min-height: 100px; }
+
+  /* Sivupalkki */
+  aside {
+    width: 240px; flex-shrink: 0; background: var(--panel); border-right: 1px solid var(--line);
+    display: flex; flex-direction: column; padding: 16px;
+  }
+  aside h1 { font-size: 18px; margin: 0 0 16px; letter-spacing: .5px; }
+  aside h2 { font-size: 11px; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; letter-spacing: 1px; }
+  #projectList { list-style: none; padding: 0; margin: 0 0 12px; overflow-y: auto; flex: 1; }
+  #projectList li {
+    padding: 8px 10px; border-radius: 6px; cursor: pointer; display: flex;
+    justify-content: space-between; align-items: center; margin-bottom: 2px;
+  }
+  #projectList li:hover { background: var(--bg); }
+  #projectList li.active { background: var(--ink); color: var(--panel); }
+  #projectList li .count { font-size: 12px; opacity: .6; }
+  #archiveSection { margin: 12px 0 4px; border-top: 1px solid var(--line); padding-top: 12px; }
+  #archiveSection summary { font-size: 11px; text-transform: uppercase; color: var(--muted);
+    letter-spacing: 1px; cursor: pointer; font-weight: 700; user-select: none; }
+  #archiveList { list-style: none; padding: 0; margin: 8px 0 0; max-height: 30vh; overflow-y: auto; }
+  #archiveList li { padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; color: var(--muted);
+    display: flex; justify-content: space-between; gap: 6px; }
+  #archiveList li:hover { background: var(--bg); color: var(--ink); }
+  #archiveList li.active { background: var(--ink); color: var(--panel); }
+  #archiveList li .date { font-size: 11px; opacity: .7; white-space: nowrap; }
+  .archive-folder { font-size: 12px; color: var(--muted); margin: 8px 0 4px; display: flex;
+    align-items: center; gap: 4px; flex-wrap: wrap; }
+  .archive-folder button { font-size: 11px; padding: 2px 6px; }
+  .archive-folder .folder-name { color: var(--ink); font-weight: 600; word-break: break-all; }
+  .archived-banner { padding: 8px 24px; background: var(--banner-bg); color: var(--banner-ink); font-size: 13px;
+    border-bottom: 1px solid var(--banner-line); }
+  .column.readonly .card { cursor: default; }
+  .side-footer { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .side-footer button { flex: 1; font-size: 12px; }
+  .side-footer button.wide { flex-basis: 100%; }
+  .filter { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--muted); }
+  .filter select { font: inherit; padding: 5px 6px; border: 1px solid var(--line); border-radius: 6px;
+    background: var(--panel); color: var(--ink); }
+  .filter.active select { border-color: var(--ink); font-weight: 600; }
+  .filter .clear { padding: 4px 8px; }
+
+  /* Pääalue */
+  main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  header {
+    display: flex; align-items: center; gap: 8px; padding: 16px 24px; flex-wrap: wrap;
+    border-bottom: 1px solid var(--line);
+  }
+  header h2 { margin: 0; font-size: 22px; flex: 1; cursor: text; }
+  #board {
+    flex: 1; display: flex; gap: 16px; padding: 24px; overflow-x: auto; align-items: flex-start;
+  }
+  .empty { margin: auto; color: var(--muted); text-align: center; }
+
+  .column {
+    width: 280px; flex-shrink: 0; background: var(--col); border-radius: 10px;
+    display: flex; flex-direction: column; max-height: 100%;
+  }
+  .column-head {
+    display: flex; align-items: center; padding: 10px 10px 6px 14px; gap: 4px;
+  }
+  .column-head h3 { margin: 0; font-size: 14px; flex: 1; cursor: text; }
+  .column-head .count { font-size: 12px; color: var(--muted); margin-right: 4px; }
+  .cards { padding: 4px 10px; min-height: 30px; overflow-y: auto; flex: 1; }
+  .cards.drag-over { background: var(--hover); border-radius: 6px; }
+  .card {
+    background: var(--panel); border-radius: 6px; padding: 10px 12px; margin-bottom: 8px;
+    box-shadow: var(--shadow); cursor: grab; border-left: 4px solid transparent;
+  }
+  .card:hover { box-shadow: var(--shadow-hover); }
+  .card.dragging { opacity: .4; }
+  .card .title { font-size: 14px; word-wrap: break-word; }
+  .card .desc { font-size: 12px; color: var(--muted); margin-top: 4px; white-space: pre-wrap;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .add-card { margin: 4px 10px 10px; text-align: left; border: none; background: none; color: var(--muted); }
+  .add-card:hover { background: var(--hover); color: var(--ink); }
+  .add-column {
+    width: 280px; flex-shrink: 0; border: 2px dashed var(--line); background: none;
+    color: var(--muted); padding: 14px; border-radius: 10px;
+  }
+
+  /* Dialogi */
+  dialog {
+    border: none; border-radius: 10px; padding: 24px; width: min(480px, 90vw);
+    box-shadow: 0 10px 40px rgba(0,0,0,.2); background: var(--panel); color: var(--ink);
+  }
+  dialog::backdrop { background: rgba(0,0,0,.35); }
+  dialog h3 { margin: 0 0 16px; }
+  dialog label { display: block; font-size: 12px; color: var(--muted); margin: 12px 0 4px; }
+  .colors { display: flex; gap: 6px; }
+  .colors span {
+    width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 2px solid transparent;
+  }
+  .colors span.selected { border-color: var(--ink); }
+  .dialog-actions { display: flex; gap: 8px; margin-top: 20px; }
+  .dialog-actions .spacer { flex: 1; }
+
+  /* Näkymävalitsin */
+  .view-toggle { display: flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .view-toggle button { border: none; border-radius: 0; }
+  .view-toggle button.on { background: var(--ink); color: var(--panel); }
+
+  /* RACI-merkit */
+  .badge {
+    display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600;
+    border-radius: 4px; padding: 2px 5px; color: #fff; line-height: 1.2;
+  }
+  .role-R { background: #3b7dd8; }
+  .role-A { background: #d9534f; }
+  .role-C { background: #e09a2d; }
+  .role-I { background: #8a857a; }
+  .card .raci { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+
+  /* Deadline */
+  .due { display: inline-block; font-size: 11px; margin-top: 6px; padding: 2px 6px; border-radius: 4px;
+    background: var(--bg); color: var(--muted); }
+  .due.soon { background: var(--soon-bg); color: var(--soon-ink); }
+  .due.overdue { background: var(--over-bg); color: var(--over-ink); font-weight: 600; }
+  .due.done { background: var(--done-bg); color: var(--done-ink); }
+
+  /* Valmiusaste */
+  .progress { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+  .progress .bar { flex: 1; height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; }
+  .progress .fill { height: 100%; background: #3b7dd8; border-radius: 3px; }
+  .progress.full .fill { background: #5cb85c; }
+  .progress .pct { font-size: 11px; color: var(--muted); min-width: 32px; text-align: right; }
+  input[type=range] { padding: 0; border: none; background: none; accent-color: var(--ink); }
+  .progress-quick { display: flex; gap: 4px; margin-top: 4px; }
+  .progress-quick button { flex: 1; font-size: 11px; padding: 2px 0; }
+  .matrix td.pct { font-size: 12px; white-space: nowrap; }
+  .cal-item .pct { font-size: 10px; opacity: .7; margin-left: 4px; }
+
+  /* Kalenteri */
+  .calendar { flex: 1; display: flex; flex-direction: column; min-width: 720px; }
+  .cal-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .cal-toolbar h3 { margin: 0 8px; font-size: 18px; min-width: 180px; text-align: center; text-transform: capitalize; }
+  .cal-grid { display: grid; grid-template-columns: 36px repeat(7, 1fr); background: var(--line); gap: 1px;
+    border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .cal-grid .dow { background: var(--col); font-size: 12px; font-weight: 600; padding: 6px; text-align: center; }
+  .cal-grid .wk { background: var(--col); font-size: 11px; color: var(--muted); padding: 6px 2px; text-align: center; }
+  .cal-day { background: var(--panel); min-height: 96px; padding: 4px; display: flex; flex-direction: column; gap: 3px; }
+  .cal-day.other { background: var(--cal-other); }
+  .cal-day.other .num { opacity: .4; }
+  .cal-day.weekend { background: var(--cal-weekend); }
+  .cal-day.today .num { background: var(--ink); color: var(--panel); border-radius: 50%; }
+  .cal-day.drag-over { background: var(--drop); }
+  .cal-day .day-head { display: flex; justify-content: space-between; align-items: center; }
+  .cal-day .num { font-size: 12px; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; }
+  .cal-day .add { visibility: hidden; padding: 0 6px; font-size: 14px; }
+  .cal-day:hover .add { visibility: visible; }
+  .cal-item { font-size: 12px; padding: 3px 6px; border-radius: 4px; background: var(--bg);
+    border-left: 3px solid var(--muted); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cal-item:hover { background: var(--col); }
+  .cal-item.overdue { color: var(--over-ink); font-weight: 600; }
+  .cal-item.done { text-decoration: line-through; opacity: .6; }
+  .cal-nodate { margin-top: 16px; }
+  .cal-nodate h4 { margin: 0 0 8px; font-size: 13px; color: var(--muted); }
+  .cal-nodate .items { display: flex; flex-wrap: wrap; gap: 6px; }
+  .cal-nodate .cal-item { max-width: 220px; }
+
+  /* RACI kortin dialogissa */
+  .raci-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+  .raci-row .name { flex: 1; font-size: 14px; }
+  .raci-pick { display: flex; gap: 3px; }
+  .raci-pick button { width: 30px; padding: 4px 0; font-size: 12px; font-weight: 600; color: var(--muted); }
+  .raci-pick button.on { color: #fff; border-color: transparent; }
+  .hint { font-size: 12px; color: var(--muted); }
+
+  /* Henkilödialogi */
+  .person-row { display: flex; gap: 6px; margin-bottom: 6px; }
+  .person-row input { flex: 1; }
+
+  /* RACI-matriisi */
+  .matrix-wrap { flex: 1; overflow: auto; }
+  .matrix { border-collapse: collapse; background: var(--panel); box-shadow: var(--shadow); border-radius: 8px; }
+  .matrix th, .matrix td { border: 1px solid var(--line); padding: 8px 10px; font-size: 13px; text-align: center; }
+  .matrix th { background: var(--col); font-weight: 600; position: sticky; top: 0; }
+  .matrix td.task { text-align: left; min-width: 220px; cursor: pointer; }
+  .matrix td.task:hover { text-decoration: underline; }
+  .matrix tr.group td { background: var(--bg); text-align: left; font-weight: 600; font-size: 12px;
+    text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
+  .matrix td.cell { cursor: pointer; width: 56px; user-select: none; }
+  .matrix td.cell:hover { background: var(--bg); }
+  .matrix td.warn { color: var(--accent); font-size: 12px; text-align: left; white-space: nowrap; }
+  .legend { display: flex; gap: 14px; margin-bottom: 14px; font-size: 13px; align-items: center; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+
+<aside>
+  <h1>▦ Kanban <button class="icon theme-toggle" id="themeToggle"></button></h1>
+  <h2>Projektit</h2>
+  <ul id="projectList"></ul>
+  <button class="primary" id="addProject">+ Uusi projekti</button>
+  <details id="archiveSection">
+    <summary id="archiveSummary">Arkisto</summary>
+    <div class="archive-folder" id="archiveFolder"></div>
+    <ul id="archiveList"></ul>
+  </details>
+  <div class="side-footer">
+    <button id="exportAllSeparate" class="wide" title="Tallentaa jokaisen projektin ja arkistoidun projektin omaksi JSON-tiedostokseen">⬇ Vie kaikki erillisinä tiedostoina</button>
+    <button id="exportBtn" title="Lataa kaikki data yhtenä JSON-varmuuskopiona">Vie varmuuskopio</button>
+    <button id="importBtn" title="Tuo varmuuskopio tai yksi/useampi projektitiedosto">Tuo</button>
+    <input type="file" id="importFile" accept=".json,application/json" multiple hidden>
+  </div>
+</aside>
+
+<main>
+  <header id="header"></header>
+  <div id="banner"></div>
+  <div id="board"></div>
+</main>
+
+<dialog id="cardDialog">
+  <form method="dialog" id="cardForm">
+    <h3 id="cardDialogTitle">Kortti</h3>
+    <label for="cardTitle">Otsikko</label>
+    <input id="cardTitle" required autocomplete="off">
+    <label for="cardDesc">Kuvaus</label>
+    <textarea id="cardDesc"></textarea>
+    <label for="cardDue">Deadline</label>
+    <div style="display:flex;gap:6px">
+      <input type="date" id="cardDue" style="flex:1">
+      <button type="button" id="clearDue" title="Poista deadline">✕</button>
+    </div>
+    <label for="cardProgress">Valmiusaste: <strong id="progressVal">0 %</strong></label>
+    <input type="range" id="cardProgress" min="0" max="100" step="5" value="0">
+    <div class="progress-quick" id="progressQuick"></div>
+    <label>Väri</label>
+    <div class="colors" id="cardColors"></div>
+    <label>RACI</label>
+    <div id="cardRaci"></div>
+    <div class="dialog-actions">
+      <button type="button" class="danger" id="deleteCard">Poista</button>
+      <span class="spacer"></span>
+      <button type="button" id="cancelCard">Peruuta</button>
+      <button type="submit" class="primary">Tallenna</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="peopleDialog">
+  <h3>Projektin henkilöt</h3>
+  <div id="peopleList"></div>
+  <form id="addPersonForm" class="person-row" style="margin-top:12px">
+    <input id="newPerson" placeholder="Uuden henkilön nimi" autocomplete="off">
+    <button type="submit" class="primary">Lisää</button>
+  </form>
+  <div class="dialog-actions">
+    <span class="spacer"></span>
+    <button type="button" id="closePeople">Valmis</button>
+  </div>
+</dialog>
+
+<script>
+const STORAGE_KEY = 'simple-kanban-v1';
+const COLORS = ['transparent', '#d9534f', '#f0ad4e', '#5cb85c', '#5bc0de', '#7e57c2'];
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+// ---------- Tila ----------
+let state = load();
+
+const ROLES = {
+  R: 'Responsible – tekee työn',
+  A: 'Accountable – hyväksyy, lopullinen vastuu',
+  C: 'Consulted – konsultoidaan',
+  I: 'Informed – pidetään ajan tasalla',
+};
+const ROLE_ORDER = ['R', 'A', 'C', 'I'];
+
+function load() {
+  try {
+    const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (data && Array.isArray(data.projects)) return normalize(data);
+  } catch {}
+  return { projects: [], archive: [], activeId: null, archiveViewId: null, view: 'board' };
+}
+
+// Täydentää vanhemmasta versiosta puuttuvat kentät
+function normalize(data) {
+  data.view ??= 'board';
+  data.archive ??= [];
+  data.archiveViewId ??= null;
+  for (const p of [...data.projects, ...data.archive]) {
+    p.people ??= [];
+    for (const col of p.columns) for (const card of col.cards) card.raci ??= {};
+  }
+  return data;
+}
+
+// Asettaa roolin; kullakin tehtävällä voi olla vain yksi A
+function setRole(raci, personId, role) {
+  if (!role) { delete raci[personId]; return; }
+  if (role === 'A') for (const id in raci) if (raci[id] === 'A') delete raci[id];
+  raci[personId] = role;
+}
+
+function raciWarnings(card) {
+  const roles = Object.values(card.raci);
+  const w = [];
+  if (!roles.includes('A')) w.push('Ei A:ta');
+  if (!roles.includes('R')) w.push('Ei R:ää');
+  return w;
+}
+
+// Henkilösuodatin (ei tallenneta, projektikohtainen istunnon ajan)
+const filters = {}; // projectId -> { person: '' | personId | '__none__', role: '' | 'R'|'A'|'C'|'I' }
+const getFilter = p => (filters[p.id] ??= { person: '', role: '' });
+const filterActive = p => !!getFilter(p).person;
+
+function cardVisible(p, card) {
+  const { person, role } = getFilter(p);
+  if (!person) return true;
+  if (person === '__none__') return Object.keys(card.raci).length === 0;
+  const r = card.raci[person];
+  return role ? r === role : !!r;
+}
+
+function renderFilter(p) {
+  const f = getFilter(p);
+  // Poistettu henkilö → nollaa suodatin
+  if (f.person && f.person !== '__none__' && !p.people.some(x => x.id === f.person)) f.person = '';
+
+  const person = el('select', { title: 'Näytä vain valitun henkilön tehtävät' });
+  person.append(el('option', { value: '', textContent: 'Kaikki henkilöt' }));
+  for (const pp of p.people) person.append(el('option', { value: pp.id, textContent: pp.name }));
+  person.append(el('option', { value: '__none__', textContent: '– Ei vastuuhenkilöä –' }));
+  person.value = f.person;
+  person.onchange = () => { f.person = person.value; if (!f.person || f.person === '__none__') f.role = ''; render(); };
+
+  const wrap = el('div', { className: 'filter' + (f.person ? ' active' : '') }, '🔍', person);
+
+  if (f.person && f.person !== '__none__') {
+    const role = el('select', { title: 'Rajaa roolin mukaan' });
+    role.append(el('option', { value: '', textContent: 'Kaikki roolit' }));
+    for (const r of ROLE_ORDER) role.append(el('option', { value: r, textContent: `${r} – ${ROLES[r].split(' – ')[0]}` }));
+    role.value = f.role;
+    role.onchange = () => { f.role = role.value; render(); };
+    wrap.append(role);
+  }
+  if (f.person) {
+    const clear = el('button', { className: 'clear', textContent: '✕', title: 'Poista suodatin' });
+    clear.onclick = () => { f.person = ''; f.role = ''; render(); };
+    wrap.append(clear);
+  }
+  return wrap;
+}
+
+// ---------- Päivämäärät ----------
+const pad = n => String(n).padStart(2, '0');
+const dateStr = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; // paikallinen YYYY-MM-DD
+const todayStr = () => dateStr(new Date());
+const parseDate = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const daysUntil = s => Math.round((parseDate(s) - parseDate(todayStr())) / 864e5);
+const fmtDue = s => {
+  const d = parseDate(s);
+  const sameYear = d.getFullYear() === new Date().getFullYear();
+  return d.toLocaleDateString('fi-FI', { weekday: 'short', day: 'numeric', month: 'numeric', ...(sameYear ? {} : { year: 'numeric' }) });
+};
+function isoWeek(d) {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7));
+  return Math.ceil(((t - Date.UTC(t.getUTCFullYear(), 0, 1)) / 864e5 + 1) / 7);
+}
+// Viimeinen sarake tulkitaan "valmiiksi" – sen korteista ei varoiteta myöhästymisestä
+const isDoneCol = (p, col) => p.columns.at(-1) === col;
+
+// Palauttaa { cls, text, title } kortin deadline-merkille
+function dueInfo(card, done) {
+  if (!card.due) return null;
+  const n = daysUntil(card.due);
+  const rel = n === 0 ? 'tänään' : n === 1 ? 'huomenna' : n === -1 ? 'eilen' : n < 0 ? `${-n} pv myöhässä` : `${n} pv`;
+  const cls = done ? 'done' : n < 0 ? 'overdue' : n <= 2 ? 'soon' : '';
+  return { cls, text: `📅 ${fmtDue(card.due)}`, title: `Deadline ${fmtDue(card.due)} (${rel})` };
+}
+
+function progressBar(pct) {
+  const fill = el('div', { className: 'fill' });
+  fill.style.width = pct + '%';
+  return el('div', { className: 'progress' + (pct >= 100 ? ' full' : ''), title: `Valmiusaste ${pct} %` },
+    el('div', { className: 'bar' }, fill), el('span', { className: 'pct', textContent: pct + ' %' }));
+}
+
+const initials = name => name.split(/\s+/).filter(Boolean).slice(0, 2).map(s => s[0].toUpperCase()).join('');
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+const activeProject = () => state.projects.find(p => p.id === state.activeId);
+const archivedProject = () => state.archive.find(p => p.id === state.archiveViewId);
+const fmtDate = iso => new Date(iso).toLocaleDateString('fi-FI');
+
+function newProject(name) {
+  return {
+    id: uid(),
+    name,
+    people: [],
+    columns: ['Tehtävänä', 'Työn alla', 'Valmis'].map(title => ({ id: uid(), title, cards: [] })),
+  };
+}
+
+// ---------- Renderöinti ----------
+const $ = sel => document.querySelector(sel);
+const el = (tag, props = {}, ...children) => {
+  const e = Object.assign(document.createElement(tag), props);
+  e.append(...children);
+  return e;
+};
+
+function render() {
+  renderProjects();
+  renderArchiveList();
+  $('#banner').innerHTML = '';
+  if (archivedProject()) { renderArchiveView(archivedProject()); return; }
+  renderHeader();
+  renderBoard();
+}
+
+function renderProjects() {
+  const list = $('#projectList');
+  list.innerHTML = '';
+  for (const p of state.projects) {
+    const total = p.columns.reduce((n, c) => n + c.cards.length, 0);
+    const li = el('li', { className: p.id === state.activeId && !archivedProject() ? 'active' : '' },
+      el('span', { textContent: p.name }),
+      el('span', { className: 'count', textContent: total }));
+    li.onclick = () => { state.activeId = p.id; state.archiveViewId = null; save(); render(); };
+    list.append(li);
+  }
+}
+
+function renderArchiveList() {
+  const list = $('#archiveList');
+  list.innerHTML = '';
+  $('#archiveSummary').textContent = `Arkisto (${state.archive.length})`;
+  if (!state.archive.length) list.append(el('li', { textContent: 'Ei arkistoituja projekteja', style: 'cursor:default' }));
+  const sorted = [...state.archive].sort((a, b) => b.archivedAt.localeCompare(a.archivedAt));
+  for (const p of sorted) {
+    const li = el('li', { className: p.id === state.archiveViewId ? 'active' : '', title: 'Näytä arkistoitu projekti' },
+      el('span', { textContent: p.name + (p.archiveFile ? '' : ' ⚠') }),
+      el('span', { className: 'date', textContent: fmtDate(p.archivedAt) }));
+    if (!p.archiveFile) li.title = 'Ei tallennettu tiedostoksi';
+    li.onclick = () => { state.archiveViewId = p.id; save(); render(); };
+    list.append(li);
+  }
+}
+
+function renderHeader() {
+  const header = $('#header');
+  header.innerHTML = '';
+  const p = activeProject();
+  if (!p) return;
+  const title = el('h2', { textContent: p.name, title: 'Klikkaa nimetäksesi uudelleen' });
+  title.onclick = () => {
+    const name = prompt('Projektin nimi:', p.name);
+    if (name?.trim()) { p.name = name.trim(); save(); render(); }
+  };
+  const del = el('button', { className: 'danger', textContent: 'Poista projekti' });
+  del.onclick = () => {
+    if (!confirm(`Poistetaanko projekti "${p.name}" ja kaikki sen kortit?`)) return;
+    state.projects = state.projects.filter(x => x.id !== p.id);
+    state.activeId = state.projects[0]?.id ?? null;
+    save(); render();
+  };
+  const toggle = el('div', { className: 'view-toggle' });
+  for (const [view, label] of [['board', 'Taulu'], ['calendar', 'Kalenteri'], ['raci', 'RACI-matriisi']]) {
+    const b = el('button', { textContent: label, className: state.view === view ? 'on' : '' });
+    b.onclick = () => { state.view = view; save(); render(); };
+    toggle.append(b);
+  }
+  const people = el('button', { textContent: `👥 Henkilöt (${p.people.length})` });
+  people.onclick = openPeopleDialog;
+  const archive = el('button', { textContent: '📦 Arkistoi', title: 'Siirrä projekti arkistoon' });
+  archive.onclick = () => archiveProject(p);
+  header.append(title, renderFilter(p), toggle, people, archive, del);
+}
+
+function renderBoard() {
+  const board = $('#board');
+  board.innerHTML = '';
+  const p = activeProject();
+  if (!p) {
+    board.append(el('div', { className: 'empty' },
+      el('p', { textContent: 'Ei valittua projektia.' }),
+      el('p', { textContent: 'Luo uusi projekti vasemmalta.' })));
+    return;
+  }
+  if (state.view === 'raci') { renderMatrix(p, board); return; }
+  if (state.view === 'calendar') { renderCalendar(p, board); return; }
+
+  for (const col of p.columns) board.append(renderColumn(p, col));
+
+  const addCol = el('button', { className: 'add-column', textContent: '+ Lisää sarake' });
+  addCol.onclick = () => {
+    const title = prompt('Sarakkeen nimi:');
+    if (title?.trim()) { p.columns.push({ id: uid(), title: title.trim(), cards: [] }); save(); render(); }
+  };
+  board.append(addCol);
+}
+
+function visibleCount(p, col) {
+  const n = col.cards.filter(c => cardVisible(p, c)).length;
+  return filterActive(p) ? `${n}/${col.cards.length}` : n;
+}
+
+function renderColumn(project, col) {
+  const title = el('h3', { textContent: col.title, title: 'Klikkaa nimetäksesi uudelleen' });
+  title.onclick = () => {
+    const t = prompt('Sarakkeen nimi:', col.title);
+    if (t?.trim()) { col.title = t.trim(); save(); render(); }
+  };
+
+  const left = el('button', { className: 'icon', textContent: '‹', title: 'Siirrä vasemmalle' });
+  const right = el('button', { className: 'icon', textContent: '›', title: 'Siirrä oikealle' });
+  const idx = project.columns.indexOf(col);
+  left.disabled = idx === 0;
+  right.disabled = idx === project.columns.length - 1;
+  left.onclick = () => moveColumn(project, idx, -1);
+  right.onclick = () => moveColumn(project, idx, 1);
+
+  const del = el('button', { className: 'icon', textContent: '✕', title: 'Poista sarake' });
+  del.onclick = () => {
+    if (col.cards.length && !confirm(`Sarakkeessa "${col.title}" on ${col.cards.length} korttia. Poistetaanko?`)) return;
+    project.columns = project.columns.filter(c => c.id !== col.id);
+    save(); render();
+  };
+
+  const head = el('div', { className: 'column-head' },
+    title, el('span', { className: 'count', textContent: visibleCount(project, col) }), left, right, del);
+
+  const cards = el('div', { className: 'cards' });
+  cards.dataset.colId = col.id;
+  for (const card of col.cards) if (cardVisible(project, card)) cards.append(renderCard(card, project.people, false, isDoneCol(project, col)));
+  setupDropZone(cards);
+
+  const add = el('button', { className: 'add-card', textContent: '+ Lisää kortti' });
+  add.onclick = () => openCardDialog(col.id, null);
+
+  return el('div', { className: 'column' }, head, cards, add);
+}
+
+function renderCard(card, people = activeProject().people, readOnly = false, done = false) {
+  const div = el('div', { className: 'card', draggable: !readOnly },
+    el('div', { className: 'title', textContent: card.title }));
+  if (card.desc) div.append(el('div', { className: 'desc', textContent: card.desc }));
+  if (card.progress) div.append(progressBar(card.progress));
+  const due = dueInfo(card, done || readOnly);
+  if (due) div.append(el('div', {}, el('span', { className: `due ${readOnly ? '' : due.cls}`, textContent: due.text, title: due.title })));
+  const assigned = people.filter(pp => card.raci[pp.id])
+    .sort((a, b) => ROLE_ORDER.indexOf(card.raci[a.id]) - ROLE_ORDER.indexOf(card.raci[b.id]));
+  if (assigned.length) {
+    const raci = el('div', { className: 'raci' });
+    for (const person of assigned) {
+      const role = card.raci[person.id];
+      raci.append(el('span', {
+        className: `badge role-${role}`,
+        textContent: `${role} · ${initials(person.name)}`,
+        title: `${person.name}: ${ROLES[role]}`,
+      }));
+    }
+    div.append(raci);
+  }
+  if (card.color && card.color !== 'transparent') div.style.borderLeftColor = card.color;
+  div.dataset.cardId = card.id;
+  if (readOnly) return div;
+  div.onclick = () => openCardDialog(null, card.id);
+  div.ondragstart = e => {
+    e.dataTransfer.setData('text/plain', card.id);
+    e.dataTransfer.effectAllowed = 'move';
+    requestAnimationFrame(() => div.classList.add('dragging'));
+  };
+  div.ondragend = () => div.classList.remove('dragging');
+  return div;
+}
+
+function moveColumn(project, idx, dir) {
+  const cols = project.columns;
+  [cols[idx], cols[idx + dir]] = [cols[idx + dir], cols[idx]];
+  save(); render();
+}
+
+// ---------- Kalenteri ----------
+let calMonth = (() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); })();
+
+function calItem(p, col, card) {
+  const done = isDoneCol(p, col);
+  const due = card.due ? dueInfo(card, done) : null;
+  const item = el('div', {
+    className: 'cal-item' + (due?.cls === 'overdue' ? ' overdue' : '') + (done ? ' done' : ''),
+    textContent: card.title, draggable: true,
+  });
+  if (card.progress) item.append(el('span', { className: 'pct', textContent: card.progress + ' %' }));
+  const roles = p.people.filter(x => card.raci[x.id]).map(x => `${card.raci[x.id]}: ${x.name}`);
+  item.title = [card.title, `Sarake: ${col.title}`, due?.title, card.progress ? `Valmiusaste ${card.progress} %` : '', ...roles].filter(Boolean).join('\n');
+  if (card.color && card.color !== 'transparent') item.style.borderLeftColor = card.color;
+  item.onclick = () => openCardDialog(null, card.id);
+  item.ondragstart = e => { e.dataTransfer.setData('text/plain', card.id); e.dataTransfer.effectAllowed = 'move'; };
+  return item;
+}
+
+function calDropZone(zone, p, date) {
+  zone.ondragover = e => { e.preventDefault(); zone.classList.add('drag-over'); };
+  zone.ondragleave = e => { if (!zone.contains(e.relatedTarget)) zone.classList.remove('drag-over'); };
+  zone.ondrop = e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    const found = findCard(p, e.dataTransfer.getData('text/plain'));
+    if (!found) return;
+    if (date) found.card.due = date; else delete found.card.due;
+    save(); render();
+  };
+}
+
+function renderCalendar(p, board) {
+  const cal = el('div', { className: 'calendar' });
+  board.append(cal);
+
+  // Työkalurivi
+  const prev = el('button', { textContent: '‹', title: 'Edellinen kuukausi' });
+  const next = el('button', { textContent: '›', title: 'Seuraava kuukausi' });
+  const today = el('button', { textContent: 'Tänään' });
+  prev.onclick = () => { calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() - 1, 1); render(); };
+  next.onclick = () => { calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 1); render(); };
+  today.onclick = () => { const d = new Date(); calMonth = new Date(d.getFullYear(), d.getMonth(), 1); render(); };
+  const monthName = calMonth.toLocaleDateString('fi-FI', { month: 'long', year: 'numeric' });
+  cal.append(el('div', { className: 'cal-toolbar' }, prev, el('h3', { textContent: monthName }), next, today,
+    el('span', { className: 'hint', textContent: 'Raahaa tehtävä päivälle muuttaaksesi deadlinea.' })));
+
+  // Kortit päivittäin (suodatin huomioiden)
+  const byDate = {};
+  const noDate = [];
+  for (const col of p.columns) for (const card of col.cards) {
+    if (!cardVisible(p, card)) continue;
+    if (card.due) (byDate[card.due] ??= []).push({ col, card });
+    else noDate.push({ col, card });
+  }
+
+  const grid = el('div', { className: 'cal-grid' });
+  grid.append(el('div', { className: 'dow', textContent: 'Vk' }));
+  for (const d of ['Ma', 'Ti', 'Ke', 'To', 'Pe', 'La', 'Su']) grid.append(el('div', { className: 'dow', textContent: d }));
+
+  // Alkaa kuukauden ensimmäistä päivää edeltävästä maanantaista, päättyy viimeisen päivän jälkeiseen sunnuntaihin
+  const start = new Date(calMonth);
+  start.setDate(1 - ((start.getDay() + 6) % 7));
+  const last = new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 0);
+  const end = new Date(last);
+  end.setDate(last.getDate() + (7 - ((last.getDay() + 6) % 7) - 1));
+  const today_ = todayStr();
+
+  for (const d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    if ((d.getDay() + 6) % 7 === 0) grid.append(el('div', { className: 'wk', textContent: isoWeek(d) }));
+    const ds = dateStr(d);
+    const cls = ['cal-day'];
+    if (d.getMonth() !== calMonth.getMonth()) cls.push('other');
+    if (d.getDay() === 0 || d.getDay() === 6) cls.push('weekend');
+    if (ds === today_) cls.push('today');
+    const add = el('button', { className: 'icon add', textContent: '+', title: 'Uusi tehtävä tälle päivälle' });
+    add.onclick = () => p.columns.length ? openCardDialog(p.columns[0].id, null, ds) : alert('Lisää projektiin ensin sarake.');
+    const cell = el('div', { className: cls.join(' ') },
+      el('div', { className: 'day-head' }, el('span', { className: 'num', textContent: d.getDate() }), add));
+    for (const { col, card } of byDate[ds] ?? []) cell.append(calItem(p, col, card));
+    calDropZone(cell, p, ds);
+    grid.append(cell);
+  }
+  cal.append(grid);
+
+  // Ilman deadlinea – raahaamalla tänne poistuu deadline
+  const nd = el('div', { className: 'cal-nodate' }, el('h4', { textContent: `Ilman deadlinea (${noDate.length})` }));
+  const items = el('div', { className: 'items' });
+  for (const { col, card } of noDate) items.append(calItem(p, col, card));
+  if (!noDate.length) items.append(el('span', { className: 'hint', textContent: 'Kaikilla tehtävillä on deadline. Raahaa tehtävä tähän poistaaksesi deadlinen.' }));
+  nd.append(items);
+  calDropZone(nd, p, null);
+  cal.append(nd);
+}
+
+// ---------- RACI-matriisi ----------
+function renderMatrix(p, board) {
+  const wrap = el('div', { className: 'matrix-wrap' });
+  board.append(wrap);
+
+  const legend = el('div', { className: 'legend' });
+  for (const r of ROLE_ORDER) {
+    legend.append(el('span', {}, el('span', { className: `badge role-${r}`, textContent: r }), ' ' + ROLES[r]));
+  }
+  wrap.append(legend);
+
+  if (!p.people.length) {
+    const add = el('button', { className: 'primary', textContent: 'Lisää henkilöitä' });
+    add.onclick = openPeopleDialog;
+    wrap.append(el('p', { className: 'hint', textContent: 'Projektissa ei ole vielä henkilöitä. ' }), add);
+    return;
+  }
+
+  const table = el('table', { className: 'matrix' });
+  const headRow = el('tr', {}, el('th', { textContent: 'Tehtävä', style: 'text-align:left' }));
+  for (const person of p.people) headRow.append(el('th', { textContent: person.name }));
+  headRow.append(el('th', { textContent: 'Valmius' }), el('th', { textContent: 'Huomiot' }));
+  table.append(el('thead', {}, headRow));
+
+  const tbody = el('tbody');
+  for (const col of p.columns) {
+    const group = el('tr', { className: 'group' });
+    group.append(el('td', { colSpan: p.people.length + 3, textContent: `${col.title} (${visibleCount(p, col)})` }));
+    tbody.append(group);
+
+    for (const card of col.cards) {
+      if (!cardVisible(p, card)) continue;
+      const row = el('tr');
+      const task = el('td', { className: 'task', textContent: card.title, title: 'Avaa kortti' });
+      task.onclick = () => openCardDialog(null, card.id);
+      row.append(task);
+
+      for (const person of p.people) {
+        const role = card.raci[person.id];
+        const cell = el('td', { className: 'cell', title: 'Klikkaa vaihtaaksesi roolia (R → A → C → I → tyhjä)' });
+        if (role) cell.append(el('span', { className: `badge role-${role}`, textContent: role }));
+        cell.onclick = () => {
+          const next = ROLE_ORDER[ROLE_ORDER.indexOf(role) + 1] ?? null; // undefined → R, I → tyhjä
+          setRole(card.raci, person.id, role ? next : 'R');
+          save(); render();
+        };
+        row.append(cell);
+      }
+      row.append(el('td', { className: 'pct', textContent: card.progress ? card.progress + ' %' : '–' }));
+      row.append(el('td', { className: 'warn', textContent: raciWarnings(card).join(', ') }));
+      tbody.append(row);
+    }
+  }
+  table.append(tbody);
+  wrap.append(table, el('p', { className: 'hint',
+    textContent: 'Vinkki: jokaisella tehtävällä pitäisi olla tasan yksi A ja vähintään yksi R. Uusi A korvaa tehtävän edellisen A:n.' }));
+}
+
+// ---------- Henkilöt ----------
+const peopleDialog = $('#peopleDialog');
+
+function openPeopleDialog() {
+  renderPeopleList();
+  peopleDialog.showModal();
+  $('#newPerson').focus();
+}
+
+function renderPeopleList() {
+  const p = activeProject();
+  const list = $('#peopleList');
+  list.innerHTML = '';
+  if (!p.people.length) list.append(el('p', { className: 'hint', textContent: 'Ei henkilöitä vielä.' }));
+  for (const person of p.people) {
+    const input = el('input', { value: person.name });
+    input.onchange = () => {
+      if (input.value.trim()) { person.name = input.value.trim(); save(); render(); }
+      else input.value = person.name;
+    };
+    const del = el('button', { className: 'danger', textContent: 'Poista' });
+    del.onclick = () => {
+      if (!confirm(`Poistetaanko ${person.name}? Hänen RACI-roolinsa poistetaan kaikista korteista.`)) return;
+      p.people = p.people.filter(x => x.id !== person.id);
+      for (const col of p.columns) for (const card of col.cards) delete card.raci[person.id];
+      save(); render(); renderPeopleList();
+    };
+    list.append(el('div', { className: 'person-row' }, input, del));
+  }
+}
+
+$('#addPersonForm').onsubmit = e => {
+  e.preventDefault();
+  const name = $('#newPerson').value.trim();
+  if (!name) return;
+  activeProject().people.push({ id: uid(), name });
+  $('#newPerson').value = '';
+  save(); render(); renderPeopleList();
+};
+
+$('#closePeople').onclick = () => peopleDialog.close();
+
+// ---------- Arkistokansio ----------
+// Chrome/Edge: tiedostot kirjoitetaan käyttäjän valitsemaan kansioon (File System Access API).
+// Muut selaimet: tiedosto ladataan selaimen latauskansioon.
+const FS_SUPPORTED = typeof window.showDirectoryPicker === 'function';
+let archiveDir = null;        // kansion kahva
+let archiveDirReady = false;  // onko kirjoitusoikeus myönnetty tällä istunnolla
+
+// Kansion kahva säilytetään IndexedDB:ssä, jotta kansiota ei tarvitse valita joka kerta
+function idb(mode, fn) {
+  return new Promise((resolve, reject) => {
+    const open = indexedDB.open('simple-kanban', 1);
+    open.onupgradeneeded = () => open.result.createObjectStore('kv');
+    open.onerror = () => reject(open.error);
+    open.onsuccess = () => {
+      const tx = open.result.transaction('kv', mode);
+      const req = fn(tx.objectStore('kv'));
+      tx.oncomplete = () => resolve(req.result);
+      tx.onerror = () => reject(tx.error);
+    };
+  });
+}
+
+async function initArchiveDir() {
+  renderArchiveFolder();
+  if (!FS_SUPPORTED) return;
+  try {
+    archiveDir = await idb('readonly', st => st.get('archiveDir')) ?? null;
+    if (archiveDir) archiveDirReady = await archiveDir.queryPermission({ mode: 'readwrite' }) === 'granted';
+  } catch { archiveDir = null; }
+  renderArchiveFolder();
+}
+
+async function chooseArchiveDir() {
+  archiveDir = await showDirectoryPicker({ id: 'kanban-arkisto', mode: 'readwrite' });
+  archiveDirReady = true;
+  renderArchiveFolder();
+  idb('readwrite', st => st.put(archiveDir, 'archiveDir')).catch(() => {}); // muistaminen ei saa estää tallennusta
+}
+
+// Palauttaa kirjoitettavan kansion; kysyy luvan tai kansion tarvittaessa (vaatii käyttäjän klikkauksen)
+async function ensureArchiveDir() {
+  if (archiveDir && !archiveDirReady) {
+    archiveDirReady = await archiveDir.requestPermission({ mode: 'readwrite' }) === 'granted';
+  }
+  if (!archiveDirReady) await chooseArchiveDir();
+  renderArchiveFolder();
+  return archiveDir;
+}
+
+function renderArchiveFolder() {
+  const box = $('#archiveFolder');
+  box.innerHTML = '';
+  if (!FS_SUPPORTED) {
+    box.append(el('span', { textContent: 'Arkistotiedostot ladataan selaimen latauskansioon.' }));
+    return;
+  }
+  const pick = el('button', { textContent: archiveDir ? 'Vaihda' : '📁 Valitse arkistokansio' });
+  pick.onclick = () => chooseArchiveDir().catch(() => {});
+  if (archiveDir) {
+    box.append('Kansio:', el('span', { className: 'folder-name', textContent: archiveDir.name }));
+    if (!archiveDirReady) {
+      const connect = el('button', { textContent: 'Salli käyttö', title: 'Selain vaatii luvan kansioon kirjoittamiseen' });
+      connect.onclick = () => ensureArchiveDir().catch(() => {});
+      box.append(connect);
+    }
+  }
+  box.append(pick);
+}
+
+const slug = name => name.toLowerCase().replace(/[^a-z0-9åäö]+/g, '-').replace(/^-|-$/g, '') || 'projekti';
+const archiveData = p => ({ type: 'simple-kanban-project', version: 1, project: p });
+const archiveFileName = p => `arkisto-${slug(p.name)}-${p.archivedAt.slice(0, 10)}.json`;
+
+async function fileExists(dir, name) {
+  try { await dir.getFileHandle(name); return true; } catch { return false; }
+}
+
+// Tallentaa arkistoidun projektin omaksi tiedostokseen. Palauttaa tiedoston nimen.
+async function writeArchiveFile(p) {
+  if (!FS_SUPPORTED) {
+    downloadJson(archiveData(p), archiveFileName(p));
+    return { name: archiveFileName(p), where: 'Lataukset' };
+  }
+  const dir = await ensureArchiveDir();
+  let name = archiveFileName(p);
+  for (let i = 2; await fileExists(dir, name); i++) name = archiveFileName(p).replace(/\.json$/, `-${i}.json`);
+  const writable = await (await dir.getFileHandle(name, { create: true })).createWritable();
+  await writable.write(JSON.stringify(archiveData(p), null, 2));
+  await writable.close();
+  return { name, where: dir.name };
+}
+
+// ---------- Arkisto ----------
+async function archiveProject(p) {
+  if (!confirm(`Arkistoidaanko projekti "${p.name}"?\n\nSe tallennetaan omaksi JSON-tiedostokseen ja siirretään arkistoon, josta sen voi palauttaa.`)) return;
+  const archived = { ...p, archivedAt: new Date().toISOString() };
+  try {
+    const file = await writeArchiveFile(archived);
+    archived.archiveFile = `${file.where}/${file.name}`;
+  } catch (err) {
+    if (!confirm(`Tiedostoon tallennus epäonnistui (${err.message}).\n\nArkistoidaanko silti pelkästään sovelluksen sisälle?`)) return;
+  }
+  state.projects = state.projects.filter(x => x.id !== p.id);
+  state.archive.push(archived);
+  state.activeId = state.projects[0]?.id ?? null;
+  $('#archiveSection').open = true;
+  save(); render();
+}
+
+async function saveArchiveFile(p) {
+  try {
+    const file = await writeArchiveFile(p);
+    p.archiveFile = `${file.where}/${file.name}`;
+    save(); render();
+  } catch (err) {
+    if (err.name !== 'AbortError') alert('Tallennus epäonnistui: ' + err.message);
+  }
+}
+
+function restoreProject(p) {
+  state.archive = state.archive.filter(x => x.id !== p.id);
+  const { archivedAt, archiveFile, ...project } = p;
+  state.projects.push(project);
+  state.activeId = project.id;
+  state.archiveViewId = null;
+  save(); render();
+}
+
+function downloadJson(data, filename) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = el('a', { href: URL.createObjectURL(blob), download: filename });
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function renderArchiveView(p) {
+  const header = $('#header');
+  header.innerHTML = '';
+  const restore = el('button', { className: 'primary', textContent: '↩ Palauta' });
+  restore.onclick = () => restoreProject(p);
+  const download = el('button', {
+    textContent: FS_SUPPORTED ? '💾 Tallenna tiedostoksi' : '⬇ Lataa JSON',
+    title: FS_SUPPORTED ? 'Tallenna projekti arkistokansioon omaksi tiedostokseen' : 'Lataa projekti JSON-tiedostona',
+  });
+  download.onclick = () => saveArchiveFile(p);
+  const del = el('button', { className: 'danger', textContent: 'Poista pysyvästi' });
+  del.onclick = () => {
+    const fileNote = p.archiveFile ? `\n\nArkistotiedosto ${p.archiveFile} säilyy levyllä.` : '';
+    if (!confirm(`Poistetaanko arkistoitu projekti "${p.name}" sovelluksesta pysyvästi?${fileNote}`)) return;
+    state.archive = state.archive.filter(x => x.id !== p.id);
+    state.archiveViewId = null;
+    save(); render();
+  };
+  header.append(el('h2', { textContent: p.name, style: 'cursor:default' }), restore, download, del);
+
+  $('#banner').append(el('div', { className: 'archived-banner',
+    textContent: `📦 Arkistoitu ${fmtDate(p.archivedAt)} – vain luku. Palauta projekti muokataksesi sitä. ` +
+      (p.archiveFile ? `Tiedosto: ${p.archiveFile}` : 'Ei vielä tallennettu tiedostoksi.') }));
+
+  const board = $('#board');
+  board.innerHTML = '';
+  for (const col of p.columns) {
+    const cards = el('div', { className: 'cards' });
+    for (const card of col.cards) cards.append(renderCard(card, p.people, true));
+    const head = el('div', { className: 'column-head' },
+      el('h3', { textContent: col.title, style: 'cursor:default' }),
+      el('span', { className: 'count', textContent: col.cards.length }));
+    board.append(el('div', { className: 'column readonly' }, head, cards));
+  }
+}
+
+// ---------- Raahaus ----------
+function setupDropZone(zone) {
+  zone.ondragover = e => {
+    e.preventDefault();
+    zone.classList.add('drag-over');
+  };
+  zone.ondragleave = e => {
+    if (!zone.contains(e.relatedTarget)) zone.classList.remove('drag-over');
+  };
+  zone.ondrop = e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    const cardId = e.dataTransfer.getData('text/plain');
+    const p = activeProject();
+    const from = findCard(p, cardId);
+    if (!from) return;
+
+    // Pudotuskohta näkyvien korttien perusteella; suodatuksen piilottamat kortit pysyvät paikallaan
+    const others = [...zone.querySelectorAll('.card')].filter(c => c.dataset.cardId !== cardId);
+    const before = others.find(c => {
+      const r = c.getBoundingClientRect();
+      return e.clientY < r.top + r.height / 2;
+    });
+    const after = before ? null : others.at(-1);
+
+    const [card] = from.col.cards.splice(from.index, 1);
+    const target = p.columns.find(c => c.id === zone.dataset.colId).cards;
+    let index = target.length;
+    if (before) index = target.findIndex(c => c.id === before.dataset.cardId);
+    else if (after) index = target.findIndex(c => c.id === after.dataset.cardId) + 1;
+    target.splice(index, 0, card);
+    save(); render();
+  };
+}
+
+function findCard(project, cardId) {
+  for (const col of project.columns) {
+    const index = col.cards.findIndex(c => c.id === cardId);
+    if (index !== -1) return { col, index, card: col.cards[index] };
+  }
+  return null;
+}
+
+// ---------- Korttidialogi ----------
+const dialog = $('#cardDialog');
+let editing = null; // { colId, cardId }
+let selectedColor = 'transparent';
+let draftRaci = {};
+
+function renderRaciPicker() {
+  const wrap = $('#cardRaci');
+  wrap.innerHTML = '';
+  const people = activeProject().people;
+  if (!people.length) {
+    wrap.append(el('p', { className: 'hint', textContent: 'Lisää projektiin henkilöitä (👥 Henkilöt), niin voit antaa heille rooleja.' }));
+    return;
+  }
+  for (const person of people) {
+    const pick = el('div', { className: 'raci-pick' });
+    for (const r of ROLE_ORDER) {
+      const on = draftRaci[person.id] === r;
+      const b = el('button', { type: 'button', textContent: r, title: ROLES[r], className: on ? `on role-${r}` : '' });
+      b.onclick = () => { setRole(draftRaci, person.id, on ? null : r); renderRaciPicker(); };
+      pick.append(b);
+    }
+    wrap.append(el('div', { className: 'raci-row' }, el('span', { className: 'name', textContent: person.name }), pick));
+  }
+  const warnings = raciWarnings({ raci: draftRaci });
+  if (warnings.length) wrap.append(el('p', { className: 'hint', textContent: '⚠ ' + warnings.join(', ') }));
+}
+
+function renderColorPicker() {
+  const wrap = $('#cardColors');
+  wrap.innerHTML = '';
+  for (const c of COLORS) {
+    const s = el('span', { className: c === selectedColor ? 'selected' : '', title: c === 'transparent' ? 'Ei väriä' : c });
+    s.style.background = c === 'transparent' ? 'repeating-linear-gradient(45deg,var(--line) 0 3px,var(--input) 3px 6px)' : c;
+    s.onclick = () => { selectedColor = c; renderColorPicker(); };
+    wrap.append(s);
+  }
+}
+
+function openCardDialog(colId, cardId, presetDue = '') {
+  editing = { colId, cardId };
+  const found = cardId ? findCard(activeProject(), cardId) : null;
+  $('#cardDialogTitle').textContent = found ? 'Muokkaa korttia' : 'Uusi kortti';
+  $('#cardTitle').value = found?.card.title ?? '';
+  $('#cardDesc').value = found?.card.desc ?? '';
+  $('#cardDue').value = found?.card.due ?? presetDue;
+  setProgressInput(found?.card.progress ?? 0);
+  selectedColor = found?.card.color ?? 'transparent';
+  $('#deleteCard').hidden = !found;
+  draftRaci = { ...(found?.card.raci ?? {}) };
+  renderColorPicker();
+  renderRaciPicker();
+  dialog.showModal();
+  $('#cardTitle').focus();
+}
+
+$('#cardForm').onsubmit = () => {
+  const title = $('#cardTitle').value.trim();
+  if (!title) return;
+  const desc = $('#cardDesc').value.trim();
+  const due = $('#cardDue').value || undefined;
+  const progress = Number($('#cardProgress').value) || undefined;
+  const p = activeProject();
+  if (editing.cardId) {
+    const card = findCard(p, editing.cardId).card;
+    Object.assign(card, { title, desc, color: selectedColor, raci: draftRaci, due, progress });
+    if (!due) delete card.due;
+    if (!progress) delete card.progress;
+  } else {
+    const card = { id: uid(), title, desc, color: selectedColor, raci: draftRaci };
+    if (due) card.due = due;
+    if (progress) card.progress = progress;
+    p.columns.find(c => c.id === editing.colId).cards.push(card);
+  }
+  save(); render();
+};
+
+$('#cancelCard').onclick = () => dialog.close();
+$('#clearDue').onclick = () => { $('#cardDue').value = ''; };
+
+function setProgressInput(v) {
+  $('#cardProgress').value = v;
+  $('#progressVal').textContent = v + ' %';
+}
+$('#cardProgress').oninput = () => setProgressInput($('#cardProgress').value);
+for (const v of [0, 25, 50, 75, 100]) {
+  const b = el('button', { type: 'button', textContent: v + ' %' });
+  b.onclick = () => setProgressInput(v);
+  $('#progressQuick').append(b);
+}
+
+$('#deleteCard').onclick = () => {
+  const found = findCard(activeProject(), editing.cardId);
+  if (found && confirm(`Poistetaanko kortti "${found.card.title}"?`)) {
+    found.col.cards.splice(found.index, 1);
+    save(); render(); dialog.close();
+  }
+};
+
+// ---------- Projektit, vienti ja tuonti ----------
+$('#addProject').onclick = () => {
+  const name = prompt('Uuden projektin nimi:');
+  if (!name?.trim()) return;
+  const p = newProject(name.trim());
+  state.projects.push(p);
+  state.activeId = p.id;
+  state.archiveViewId = null;
+  save(); render();
+};
+
+const projectData = p => ({ type: 'simple-kanban-project', version: 1, project: p });
+
+// Jokainen projekti (aktiivinen ja arkistoitu) omaksi tiedostokseen
+async function exportAllSeparate() {
+  const files = [];
+  const used = new Set();
+  const unique = name => {
+    let n = name;
+    for (let i = 2; used.has(n); i++) n = name.replace(/\.json$/, `-${i}.json`);
+    used.add(n);
+    return n;
+  };
+  for (const p of state.projects) files.push({ name: unique(`projekti-${slug(p.name)}.json`), data: projectData(p) });
+  for (const p of state.archive) {
+    const { archiveFile, ...clean } = p;
+    files.push({ name: unique(archiveFileName(p)), data: projectData(clean) });
+  }
+  if (!files.length) { alert('Ei vietäviä projekteja.'); return; }
+
+  if (FS_SUPPORTED) {
+    let parent;
+    try { parent = await showDirectoryPicker({ id: 'kanban-vienti', mode: 'readwrite' }); }
+    catch { return; } // käyttäjä perui
+    const stamp = new Date().toISOString().slice(0, 16).replace('T', '_').replace(':', '');
+    const dir = await parent.getDirectoryHandle(`kanban-vienti-${stamp}`, { create: true });
+    for (const f of files) {
+      const w = await (await dir.getFileHandle(f.name, { create: true })).createWritable();
+      await w.write(JSON.stringify(f.data, null, 2));
+      await w.close();
+    }
+    alert(`Tallennettiin ${files.length} tiedostoa kansioon ${parent.name}/${dir.name}\n` +
+      `(${state.projects.length} projektia, ${state.archive.length} arkistoitua)`);
+  } else {
+    if (!confirm(`Ladataan ${files.length} tiedostoa (${state.projects.length} projektia, ${state.archive.length} arkistoitua). ` +
+      'Selain voi kysyä luvan useiden tiedostojen lataamiseen. Jatketaanko?')) return;
+    for (const f of files) {
+      downloadJson(f.data, f.name);
+      await new Promise(r => setTimeout(r, 300)); // selaimet estävät liian nopeat peräkkäiset lataukset
+    }
+  }
+}
+
+$('#exportAllSeparate').onclick = () => exportAllSeparate().catch(err => alert('Vienti epäonnistui: ' + err.message));
+
+$('#exportBtn').onclick = () => {
+  downloadJson(state, `kanban-${new Date().toISOString().slice(0, 10)}.json`);
+};
+
+$('#importBtn').onclick = () => $('#importFile').click();
+$('#importFile').onchange = async e => {
+  const files = [...e.target.files];
+  e.target.value = '';
+  if (!files.length) return;
+
+  const parsed = [];
+  const errors = [];
+  for (const file of files) {
+    try { parsed.push({ file, data: JSON.parse(await file.text()) }); }
+    catch { errors.push(`${file.name}: ei kelvollista JSONia`); }
+  }
+
+  // Koko varmuuskopio korvaa kaiken – sallitaan vain yksinään
+  const backups = parsed.filter(x => Array.isArray(x.data.projects));
+  if (backups.length) {
+    if (parsed.length > 1) { alert('Varmuuskopiotiedosto (koko data) täytyy tuoda yksinään.'); return; }
+    const data = backups[0].data;
+    if (!confirm('Tuonti korvaa kaikki nykyiset projektit ja arkiston. Jatketaanko?')) return;
+    state = normalize({ projects: data.projects, archive: data.archive, activeId: data.activeId ?? data.projects[0]?.id ?? null, view: 'board' });
+    save(); render();
+    return;
+  }
+
+  // Projektitiedostot: arkistoitu (archivedAt) → arkistoon, muuten aktiivisiin projekteihin
+  let active = 0, archived = 0, skipped = 0;
+  for (const { file, data } of parsed) {
+    if (data.type !== 'simple-kanban-project' || !data.project?.columns) {
+      errors.push(`${file.name}: ei Kanban-projektitiedosto`);
+      continue;
+    }
+    const p = normalize({ projects: [data.project] }).projects[0];
+    delete p.archiveFile;
+    if (state.projects.some(x => x.id === p.id) || state.archive.some(x => x.id === p.id)) { skipped++; continue; }
+    if (p.archivedAt) { state.archive.push(p); archived++; }
+    else { state.projects.push(p); active++; state.activeId = p.id; state.archiveViewId = null; }
+  }
+  if (archived) $('#archiveSection').open = true;
+  save(); render();
+
+  const lines = [`Tuotiin ${active} projektia ja ${archived} arkistoitua.`];
+  if (skipped) lines.push(`Ohitettiin ${skipped}, jotka ovat jo sovelluksessa.`);
+  if (errors.length) lines.push('', 'Virheet:', ...errors);
+  alert(lines.join('\n'));
+};
+
+// ---------- Teema ----------
+function updateThemeButton() {
+  const dark = document.documentElement.dataset.theme === 'dark';
+  $('#themeToggle').textContent = dark ? '☀️' : '🌙';
+  $('#themeToggle').title = dark ? 'Vaihda vaaleaan teemaan' : 'Vaihda tummaan teemaan';
+}
+$('#themeToggle').onclick = () => {
+  const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = next;
+  localStorage.setItem('simple-kanban-theme', next);
+  updateThemeButton();
+};
+// Seurataan järjestelmän teemaa, kunnes käyttäjä valitsee itse
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+  if (localStorage.getItem('simple-kanban-theme')) return;
+  document.documentElement.dataset.theme = e.matches ? 'dark' : 'light';
+  updateThemeButton();
+});
+updateThemeButton();
+
+render();
+initArchiveDir();
+</script>
+</body>
+</html>
