@@ -9,6 +9,8 @@ A kanban board with built-in RACI responsibilities, in a single HTML file. No in
 - Multiple projects, each with its own kanban board
 - RACI roles (Responsible, Accountable, Consulted, Informed) for tasks, plus a RACI matrix view
 - Deadlines, completion percentage and a monthly calendar view
+- Task priorities (P0–P4)
+- Gantt view with task dependencies: drag a task onto another to make it a predecessor; unfinished kanban columns are ordered so predecessors come first
 - Person filter
 - Project archiving, with each archived project saved as a separate JSON file
 - JSON export and import

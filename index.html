@@ -197,6 +197,21 @@
   .role-I { background: #8a857a; }
   .card .raci { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
 
+  /* Tärkeys */
+  .prio { display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700;
+    border-radius: 4px; padding: 1px 5px; color: #fff; line-height: 1.3; vertical-align: 1px; margin-right: 6px; }
+  .prio-P0 { background: #c62828; }
+  .prio-P1 { background: #e8590c; }
+  .prio-P2 { background: #d4a017; }
+  .prio-P3 { background: #3b7dd8; }
+  .prio-P4 { background: #8a857a; }
+  .prio-pick { display: flex; gap: 3px; }
+  .prio-pick button { flex: 1; padding: 4px 0; font-size: 12px; font-weight: 600; color: var(--muted); }
+  .prio-pick button.on { color: #fff; border-color: transparent; }
+  .prio-pick button.on.none { color: var(--panel); background: var(--ink); }
+  .cal-item .prio { font-size: 9px; padding: 0 4px; margin-right: 4px; }
+  .matrix td.task .prio { margin-right: 6px; }
+
   /* Deadline */
   .due { display: inline-block; font-size: 11px; margin-top: 6px; padding: 2px 6px; border-radius: 4px;
     background: var(--bg); color: var(--muted); }
@@ -268,6 +283,66 @@
   .matrix td.cell { cursor: pointer; width: 56px; user-select: none; }
   .matrix td.cell:hover { background: var(--bg); }
   .matrix td.warn { color: var(--accent); font-size: 12px; text-align: left; white-space: nowrap; }
+  /* Gantt */
+  .gantt { flex: 1; min-width: 0; align-self: stretch; display: flex; flex-direction: column; }
+  .gantt-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .gantt-scroll { overflow: auto; min-height: 0; flex: 0 1 auto; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 8px; box-shadow: var(--shadow); }
+  .g-head { display: flex; position: sticky; top: 0; z-index: 4; background: var(--col); border-bottom: 1px solid var(--line); }
+  .g-corner { position: sticky; left: 0; z-index: 5; background: var(--col); flex-shrink: 0; font-size: 12px; font-weight: 600;
+    padding: 6px 10px; display: flex; align-items: flex-end; border-right: 1px solid var(--line); }
+  .g-months, .g-days { display: flex; }
+  .g-month { font-size: 12px; font-weight: 600; padding: 4px 6px; border-left: 1px solid var(--line); white-space: nowrap;
+    overflow: clip; text-transform: capitalize; flex-shrink: 0; }
+  .g-month span { position: sticky; left: 250px; }
+  .g-day { font-size: 10px; color: var(--muted); text-align: center; padding: 2px 0 4px; flex-shrink: 0; }
+  .g-day.weekend { background: var(--hover); }
+  .g-day.today { color: var(--panel); background: var(--accent); font-weight: 700; }
+  .g-body { position: relative; }
+  .g-row { display: flex; border-bottom: 1px solid var(--line); }
+  .g-name { position: sticky; left: 0; z-index: 3; background: var(--panel); flex-shrink: 0; padding: 0 10px; height: 100%;
+    display: flex; align-items: center; gap: 4px; font-size: 13px; cursor: grab; user-select: none; touch-action: none;
+    border-right: 1px solid var(--line); overflow: hidden; white-space: nowrap; }
+  .g-name:hover { background: var(--bg); }
+  .g-name .t { overflow: hidden; text-overflow: ellipsis; flex: 1; }
+  .g-name .c { font-size: 11px; color: var(--muted); }
+  .g-name.done .t { text-decoration: line-through; color: var(--muted); }
+  .g-name.drop-ok, .g-bar.drop-ok { outline: 2px solid #3b7dd8; outline-offset: -2px; }
+  .g-name.drop-bad, .g-bar.drop-bad { outline: 2px solid var(--accent); outline-offset: -2px; cursor: not-allowed; }
+  .g-overlay { position: absolute; top: 0; bottom: 0; z-index: 1; }
+  .g-weekend { position: absolute; top: 0; bottom: 0; background: var(--hover); }
+  .g-today { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent); opacity: .6; }
+  .g-svg { position: absolute; top: 0; left: 0; overflow: visible; pointer-events: none; color: var(--muted); }
+  .g-svg .dep { fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .g-svg .dep.bad { stroke: var(--accent); }
+  .g-svg .hit { fill: none; stroke: transparent; stroke-width: 10; pointer-events: stroke; cursor: pointer; }
+  .g-svg .hit:hover + .dep { stroke: var(--ink); stroke-width: 2.5; }
+  .g-svg .tmp { fill: none; stroke: #3b7dd8; stroke-width: 2; stroke-dasharray: 5 4; }
+  .g-bar, .g-sample { background-color: #3b7dd8; border-radius: 5px; }
+  .g-bar { position: absolute; height: 22px; color: #fff; font-size: 11px; display: flex; align-items: center; padding: 0 6px;
+    overflow: hidden; cursor: grab; user-select: none; touch-action: none; box-shadow: var(--shadow); }
+  .g-bar .fill { position: absolute; top: 0; bottom: 0; left: 0; background: rgba(255,255,255,.3); }
+  .g-bar .lbl { position: relative; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .g-bar.auto, .g-sample.auto { background-image: repeating-linear-gradient(135deg, rgba(255,255,255,.25) 0 5px, transparent 5px 10px); }
+  .g-bar.done, .g-sample.done { opacity: .45; }
+  .g-bar.late, .g-sample.late { box-shadow: 0 0 0 2px var(--accent); }
+  .g-bar.dragging, .g-name.dragging { cursor: grabbing; opacity: .7; }
+  .g-sample { display: inline-block; width: 28px; height: 12px; vertical-align: middle; }
+  .gantt .cal-nodate button { font-size: 12px; padding: 3px 8px; }
+
+  /* Kortin lisäkentät */
+  .field-row { display: flex; gap: 12px; }
+  .field-row > div { flex: 1; min-width: 0; }
+  .deps-list { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+  .dep-chip { display: inline-flex; align-items: center; font-size: 12px; background: var(--bg); border: 1px solid var(--line);
+    border-radius: 12px; padding: 2px 2px 2px 10px; }
+  .dep-chip.done { text-decoration: line-through; color: var(--muted); }
+  .dep-chip button { border: none; background: none; padding: 0 6px; color: var(--muted); }
+  select.dep-add { font: inherit; width: 100%; padding: 6px; border: 1px solid var(--line); border-radius: 6px;
+    background: var(--input); color: var(--ink); }
+  dialog label.check { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink); cursor: pointer; margin-top: 14px; }
+  dialog label.check input { width: auto; margin: 0; }
+  .card .waiting { font-size: 11px; color: var(--soon-ink); margin-top: 6px; }
   .legend { display: flex; gap: 14px; margin-bottom: 14px; font-size: 13px; align-items: center; flex-wrap: wrap; }
 </style>
 </head>
@@ -313,14 +388,27 @@
     <input id="cardTitle" required autocomplete="off">
     <label for="cardDesc">Kuvaus</label>
     <textarea id="cardDesc"></textarea>
-    <label for="cardDue">Deadline</label>
-    <div style="display:flex;gap:6px">
-      <input type="date" id="cardDue" style="flex:1">
-      <button type="button" id="clearDue" title="Poista deadline">✕</button>
+    <div class="field-row">
+      <div>
+        <label for="cardDue">Deadline</label>
+        <div style="display:flex;gap:6px">
+          <input type="date" id="cardDue" style="flex:1">
+          <button type="button" id="clearDue" title="Poista deadline">✕</button>
+        </div>
+      </div>
+      <div style="flex:0 0 110px">
+        <label for="cardDuration">Kesto (pv)</label>
+        <input type="number" id="cardDuration" min="1" max="999" value="1" title="Tehtävän kesto päivinä Gantt-kaaviossa">
+      </div>
     </div>
+    <label>Tärkeys</label>
+    <div class="prio-pick" id="cardPriority"></div>
     <label for="cardProgress">Valmiusaste: <strong id="progressVal">0 %</strong></label>
     <input type="range" id="cardProgress" min="0" max="100" step="5" value="0">
     <div class="progress-quick" id="progressQuick"></div>
+    <label>Edeltävät tehtävät <span title="Tehtävä voi alkaa, kun nämä ovat valmiita">ⓘ</span></label>
+    <div id="cardDeps"></div>
+    <label class="check"><input type="checkbox" id="cardGantt"> Näytä Gantt-kaaviossa</label>
     <label>Väri</label>
     <div class="colors" id="cardColors"></div>
     <label>RACI</label>
@@ -362,6 +450,15 @@ const ROLES = {
   I: 'Informed – pidetään ajan tasalla',
 };
 const ROLE_ORDER = ['R', 'A', 'C', 'I'];
+
+const PRIORITIES = {
+  P0: 'P0 – kriittinen, heti',
+  P1: 'P1 – korkea',
+  P2: 'P2 – normaali',
+  P3: 'P3 – matala',
+  P4: 'P4 – joskus / ei kiireellinen',
+};
+const prioBadge = prio => el('span', { className: `prio prio-${prio}`, textContent: prio, title: `Tärkeys: ${PRIORITIES[prio]}` });
 
 function load() {
   try {
@@ -560,7 +657,7 @@ function renderHeader() {
     save(); render();
   };
   const toggle = el('div', { className: 'view-toggle' });
-  for (const [view, label] of [['board', 'Taulu'], ['calendar', 'Kalenteri'], ['raci', 'RACI-matriisi']]) {
+  for (const [view, label] of [['board', 'Taulu'], ['calendar', 'Kalenteri'], ['gantt', 'Gantt'], ['raci', 'RACI-matriisi']]) {
     const b = el('button', { textContent: label, className: state.view === view ? 'on' : '' });
     b.onclick = () => { state.view = view; save(); render(); };
     toggle.append(b);
@@ -584,6 +681,7 @@ function renderBoard() {
   }
   if (state.view === 'raci') { renderMatrix(p, board); return; }
   if (state.view === 'calendar') { renderCalendar(p, board); return; }
+  if (state.view === 'gantt') { renderGantt(p, board); return; }
 
   for (const col of p.columns) board.append(renderColumn(p, col));
 
@@ -627,7 +725,7 @@ function renderColumn(project, col) {
 
   const cards = el('div', { className: 'cards' });
   cards.dataset.colId = col.id;
-  for (const card of col.cards) if (cardVisible(project, card)) cards.append(renderCard(card, project.people, false, isDoneCol(project, col)));
+  for (const card of col.cards) if (cardVisible(project, card)) cards.append(renderCard(card, project, false, isDoneCol(project, col)));
   setupDropZone(cards);
 
   const add = el('button', { className: 'add-card', textContent: '+ Lisää kortti' });
@@ -636,13 +734,21 @@ function renderColumn(project, col) {
   return el('div', { className: 'column' }, head, cards, add);
 }
 
-function renderCard(card, people = activeProject().people, readOnly = false, done = false) {
-  const div = el('div', { className: 'card', draggable: !readOnly },
-    el('div', { className: 'title', textContent: card.title }));
+function renderCard(card, project, readOnly = false, done = false) {
+  const people = project.people;
+  const titleEl = el('div', { className: 'title' });
+  if (card.priority) titleEl.append(prioBadge(card.priority));
+  titleEl.append(card.title);
+  const div = el('div', { className: 'card', draggable: !readOnly }, titleEl);
   if (card.desc) div.append(el('div', { className: 'desc', textContent: card.desc }));
   if (card.progress) div.append(progressBar(card.progress));
   const due = dueInfo(card, done || readOnly);
   if (due) div.append(el('div', {}, el('span', { className: `due ${readOnly ? '' : due.cls}`, textContent: due.text, title: due.title })));
+  if (!readOnly && !done) {
+    const waiting = depsOf(card).map(id => findCard(project, id)).filter(f => f && !isDoneCol(project, f.col));
+    if (waiting.length) div.append(el('div', { className: 'waiting', title: 'Keskeneräiset edeltävät tehtävät',
+      textContent: `⏳ Odottaa: ${waiting.map(f => f.card.title).join(', ')}` }));
+  }
   const assigned = people.filter(pp => card.raci[pp.id])
     .sort((a, b) => ROLE_ORDER.indexOf(card.raci[a.id]) - ROLE_ORDER.indexOf(card.raci[b.id]));
   if (assigned.length) {
@@ -684,11 +790,13 @@ function calItem(p, col, card) {
   const due = card.due ? dueInfo(card, done) : null;
   const item = el('div', {
     className: 'cal-item' + (due?.cls === 'overdue' ? ' overdue' : '') + (done ? ' done' : ''),
-    textContent: card.title, draggable: true,
+    draggable: true,
   });
+  if (card.priority) item.append(prioBadge(card.priority));
+  item.append(card.title);
   if (card.progress) item.append(el('span', { className: 'pct', textContent: card.progress + ' %' }));
   const roles = p.people.filter(x => card.raci[x.id]).map(x => `${card.raci[x.id]}: ${x.name}`);
-  item.title = [card.title, `Sarake: ${col.title}`, due?.title, card.progress ? `Valmiusaste ${card.progress} %` : '', ...roles].filter(Boolean).join('\n');
+  item.title = [card.title, `Sarake: ${col.title}`, card.priority ? `Tärkeys: ${PRIORITIES[card.priority]}` : '', due?.title, card.progress ? `Valmiusaste ${card.progress} %` : '', ...roles].filter(Boolean).join('\n');
   if (card.color && card.color !== 'transparent') item.style.borderLeftColor = card.color;
   item.onclick = () => openCardDialog(null, card.id);
   item.ondragstart = e => { e.dataTransfer.setData('text/plain', card.id); e.dataTransfer.effectAllowed = 'move'; };
@@ -771,6 +879,291 @@ function renderCalendar(p, board) {
   cal.append(nd);
 }
 
+// ---------- Riippuvuudet ----------
+// card.deps = edeltävien tehtävien id:t (ne tehdään ennen tätä tehtävää)
+const depsOf = card => card.deps ?? [];
+
+// Riippuuko tehtävä a (suoraan tai välillisesti) tehtävästä b
+function dependsOn(p, aId, bId, seen = new Set()) {
+  if (aId === bId) return true;
+  if (seen.has(aId)) return false;
+  seen.add(aId);
+  const a = findCard(p, aId)?.card;
+  return !!a && depsOf(a).some(id => dependsOn(p, id, bId, seen));
+}
+
+// Voiko tehtävästä pred tehdä tehtävän succ edeltäjän (ei itseensä, ei tuplana, ei kehää)
+function canDepend(p, predId, succId) {
+  const succ = findCard(p, succId)?.card;
+  return !!succ && predId !== succId && !depsOf(succ).includes(predId) && !dependsOn(p, predId, succId);
+}
+
+function addDependency(p, predId, succId) {
+  const succ = findCard(p, succId).card;
+  succ.deps = [...depsOf(succ), predId];
+  sortByDeps(p);
+}
+
+function removeDependency(p, predId, succ) {
+  succ.deps = depsOf(succ).filter(id => id !== predId);
+  if (!succ.deps.length) delete succ.deps;
+}
+
+// Järjestää keskeneräisten sarakkeiden kortit niin, että edeltävät tehtävät ovat ennen niistä riippuvia.
+// Muuten nykyinen järjestys säilyy. Viimeistä (valmis-)saraketta ei järjestellä.
+function sortByDeps(p) {
+  for (const col of p.columns) {
+    if (isDoneCol(p, col)) continue;
+    const byId = new Map(col.cards.map(c => [c.id, c]));
+    const placed = new Set(), out = [];
+    const place = (c, path = new Set()) => {
+      if (placed.has(c.id) || path.has(c.id)) return;
+      path.add(c.id);
+      for (const id of depsOf(c)) if (byId.has(id)) place(byId.get(id), path);
+      placed.add(c.id);
+      out.push(c);
+    };
+    for (const c of col.cards) place(c);
+    col.cards = out;
+  }
+}
+
+// ---------- Gantt ----------
+const G_DAY = 28, G_ROW = 34, G_NAME = 240, G_BAR = 22;
+const addDays = (s, n) => { const d = parseDate(s); d.setDate(d.getDate() + n); return dateStr(d); };
+const dayDiff = (a, b) => Math.round((parseDate(b) - parseDate(a)) / 864e5);
+const svgEl = (tag, attrs = {}) => {
+  const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  return e;
+};
+let ganttScroll = null; // vierityskohta säilyy uudelleenpiirrossa
+
+// Laskee tehtäville alku- ja loppupäivän.
+// Deadline määrää loppupäivän, jos se on asetettu. Muuten tehtävä alkaa aikaisintaan tänään
+// ja kun keskeneräiset edeltäjät ovat valmiita. Kesto tulee kortilta (oletus 1 pv).
+function schedule(p) {
+  const info = new Map();
+  for (const col of p.columns) for (const card of col.cards) info.set(card.id, { card, col, done: isDoneCol(p, col) });
+  const out = new Map();
+  const today = todayStr();
+  const calc = (id, path) => {
+    if (out.has(id)) return out.get(id);
+    const { card, done } = info.get(id);
+    path.add(id);
+    let after = null; // aikaisin aloituspäivä edeltäjien perusteella
+    for (const d of depsOf(card)) {
+      if (!info.has(d) || path.has(d) || info.get(d).done) continue;
+      const next = addDays(calc(d, path).end, 1);
+      if (!after || next > after) after = next;
+    }
+    path.delete(id);
+    const dur = card.duration ?? 1;
+    let start, end;
+    if (card.due) { end = card.due; start = addDays(end, 1 - dur); }
+    else { start = !done && after && after > today ? after : today; end = addDays(start, dur - 1); }
+    const s = { start, end, dur, done, after, auto: !card.due,
+      conflict: !done && !!after && start < after, late: !done && end < today };
+    out.set(id, s);
+    return s;
+  };
+  for (const id of info.keys()) calc(id, new Set());
+  return { sched: out, info };
+}
+
+function renderGantt(p, board) {
+  const { sched, info } = schedule(p);
+  const visible = [...info.values()].filter(x => cardVisible(p, x.card));
+  const rows = visible.filter(x => x.card.gantt !== false);
+  const hidden = visible.filter(x => x.card.gantt === false);
+  const order = new Map([...info.keys()].map((id, i) => [id, i]));
+  rows.sort((a, b) => {
+    const sa = sched.get(a.card.id), sb = sched.get(b.card.id);
+    return sa.start.localeCompare(sb.start) || sa.end.localeCompare(sb.end) || order.get(a.card.id) - order.get(b.card.id);
+  });
+
+  const wrap = el('div', { className: 'gantt' });
+  board.append(wrap);
+  const todayBtn = el('button', { textContent: 'Tänään' });
+  wrap.append(el('div', { className: 'gantt-toolbar' }, todayBtn, el('span', { className: 'hint',
+    textContent: 'Raahaa tehtävä toisen tehtävän päälle: raahattu tehtävä tehdään ensin. Klikkaa nuolta poistaaksesi riippuvuuden.' })));
+  const sample = (cls, text) => el('span', {}, el('span', { className: `g-sample ${cls}` }), ' ' + text);
+  wrap.append(el('div', { className: 'legend' },
+    sample('', 'Deadline asetettu'), sample('auto', 'Arvioitu (ei deadlinea)'),
+    sample('late', 'Myöhässä tai deadline ennen edeltäjiä'), sample('done', 'Valmis')));
+
+  if (!rows.length) {
+    wrap.append(el('p', { className: 'hint', textContent: info.size ? 'Ei näytettäviä tehtäviä.' : 'Projektissa ei ole vielä tehtäviä.' }));
+  } else {
+    // Aikajana: maanantaista ennen ensimmäistä tehtävää vähintään kuuden viikon ajalle
+    const today = todayStr();
+    let from = today, to = today;
+    for (const r of rows) {
+      const s = sched.get(r.card.id);
+      if (s.start < from) from = s.start;
+      if (s.end > to) to = s.end;
+    }
+    from = addDays(from, -3);
+    from = addDays(from, -((parseDate(from).getDay() + 6) % 7));
+    to = addDays(to, 10);
+    if (dayDiff(from, to) < 41) to = addDays(from, 41);
+    const days = dayDiff(from, to) + 1, W = days * G_DAY;
+    const x = d => dayDiff(from, d) * G_DAY;
+
+    // Otsikko: kuukaudet ja päivät
+    const months = el('div', { className: 'g-months' }), dayRow = el('div', { className: 'g-days' });
+    let mStart = 0;
+    for (let i = 0; i < days; i++) {
+      const ds = addDays(from, i), d = parseDate(ds);
+      const we = d.getDay() === 0 || d.getDay() === 6;
+      dayRow.append(el('div', { className: 'g-day' + (we ? ' weekend' : '') + (ds === today ? ' today' : ''),
+        textContent: d.getDate(), style: `width:${G_DAY}px`, title: `${fmtDue(ds)}, vk ${isoWeek(d)}` }));
+      if (i === days - 1 || parseDate(addDays(ds, 1)).getDate() === 1) {
+        months.append(el('div', { className: 'g-month', style: `width:${(i - mStart + 1) * G_DAY}px` },
+          el('span', { textContent: d.toLocaleDateString('fi-FI', { month: 'long', year: 'numeric' }) })));
+        mStart = i + 1;
+      }
+    }
+    const head = el('div', { className: 'g-head' },
+      el('div', { className: 'g-corner', textContent: 'Tehtävä', style: `width:${G_NAME}px` }), el('div', {}, months, dayRow));
+
+    // Tausta: viikonloput ja tämä päivä
+    const body = el('div', { className: 'g-body' });
+    const overlay = el('div', { className: 'g-overlay', style: `left:${G_NAME}px;width:${W}px` });
+    for (let i = 0; i < days; i++) {
+      const wd = parseDate(addDays(from, i)).getDay();
+      if (wd === 0 || wd === 6) overlay.append(el('div', { className: 'g-weekend', style: `left:${i * G_DAY}px;width:${G_DAY}px` }));
+    }
+    overlay.append(el('div', { className: 'g-today', style: `left:${x(today)}px`, title: 'Tänään' }));
+    const svg = svgEl('svg', { class: 'g-svg', width: W, height: rows.length * G_ROW });
+    svg.innerHTML = '<defs>' +
+      '<marker id="g-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker>' +
+      '<marker id="g-arr-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--accent)"/></marker>' +
+      '<marker id="g-arr-tmp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#3b7dd8"/></marker>' +
+      '</defs>';
+    overlay.append(svg);
+
+    const rowIndex = new Map(rows.map((r, i) => [r.card.id, i]));
+    const barEnd = id => ({ x: x(sched.get(id).end) + G_DAY - 2, y: rowIndex.get(id) * G_ROW + G_ROW / 2 });
+    const ctx = { p, svg, overlay, barEnd };
+
+    rows.forEach(({ card, col, done }, i) => {
+      const s = sched.get(card.id);
+      const preds = depsOf(card).map(id => findCard(p, id)?.card.title).filter(Boolean);
+
+      const name = el('div', { className: 'g-name' + (done ? ' done' : ''), style: `width:${G_NAME}px`,
+        title: `${card.title}\nSarake: ${col.title}\nKlikkaa avataksesi, raahaa toisen tehtävän päälle tehdäksesi riippuvuuden` });
+      if (card.priority) name.append(prioBadge(card.priority));
+      name.append(el('span', { className: 't', textContent: card.title }), el('span', { className: 'c', textContent: col.title }));
+      name.dataset.cardId = card.id;
+      body.append(el('div', { className: 'g-row', style: `height:${G_ROW}px` }, name, el('div', { style: `width:${W}px` })));
+      ganttDrag(ctx, name, card);
+
+      const cls = ['g-bar', s.auto && 'auto', done && 'done', (s.late || s.conflict) && 'late'].filter(Boolean).join(' ');
+      const bar = el('div', { className: cls,
+        style: `left:${x(s.start) + 2}px;width:${s.dur * G_DAY - 4}px;top:${i * G_ROW + (G_ROW - G_BAR) / 2}px` });
+      if (card.color && card.color !== 'transparent') bar.style.backgroundColor = card.color;
+      const fill = el('div', { className: 'fill' });
+      fill.style.width = (card.progress ?? 0) + '%';
+      bar.append(fill, el('span', { className: 'lbl', textContent: card.title }));
+      bar.title = [
+        card.title,
+        `${fmtDue(s.start)} – ${fmtDue(s.end)} (${s.dur} pv)`,
+        card.due ? `Deadline ${fmtDue(card.due)}` : 'Ei deadlinea – ajoitus arvioitu',
+        card.progress ? `Valmiusaste ${card.progress} %` : '',
+        preds.length ? `Edeltävät: ${preds.join(', ')}` : '',
+        s.conflict ? `⚠ Edeltävät tehtävät valmistuvat vasta ${fmtDue(addDays(s.after, -1))}` : '',
+        s.late ? '⚠ Myöhässä' : '',
+      ].filter(Boolean).join('\n');
+      bar.dataset.cardId = card.id;
+      ganttDrag(ctx, bar, card);
+      overlay.append(bar);
+    });
+
+    // Riippuvuusnuolet
+    for (const { card } of rows) for (const predId of depsOf(card)) {
+      if (!rowIndex.has(predId)) continue;
+      const ps = sched.get(predId), ss = sched.get(card.id);
+      const { x: x1, y: y1 } = barEnd(predId);
+      const x2 = x(ss.start) + 2, y2 = rowIndex.get(card.id) * G_ROW + G_ROW / 2;
+      const dx = Math.max(24, Math.abs(x2 - x1) / 2);
+      const d = `M${x1} ${y1} C${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
+      const bad = !ss.done && !ps.done && ss.start <= ps.end;
+      const pred = findCard(p, predId).card;
+      const hit = svgEl('path', { d, class: 'hit' });
+      hit.append(svgEl('title'));
+      hit.firstChild.textContent = `${pred.title} → ${card.title}\nKlikkaa poistaaksesi riippuvuuden`;
+      hit.onclick = () => {
+        if (!confirm(`Poistetaanko riippuvuus?\n\n"${pred.title}" ennen tehtävää "${card.title}"`)) return;
+        removeDependency(p, predId, card);
+        save(); render();
+      };
+      svg.append(hit, svgEl('path', { d, class: 'dep' + (bad ? ' bad' : ''), 'marker-end': `url(#${bad ? 'g-arr-bad' : 'g-arr'})` }));
+    }
+
+    body.append(overlay);
+    const scroll = el('div', { className: 'gantt-scroll' }, el('div', { style: `width:${G_NAME + W}px` }, head, body));
+    wrap.append(scroll);
+    const toToday = () => { scroll.scrollLeft = x(today) - 3 * G_DAY; };
+    todayBtn.onclick = toToday;
+    if (ganttScroll?.id === p.id) { scroll.scrollLeft = ganttScroll.left; scroll.scrollTop = ganttScroll.top; }
+    else toToday();
+    scroll.onscroll = () => { ganttScroll = { id: p.id, left: scroll.scrollLeft, top: scroll.scrollTop }; };
+  }
+
+  // Gantt-kaaviosta piilotetut tehtävät
+  if (hidden.length) {
+    const items = el('div', { className: 'items' });
+    for (const { card } of hidden) {
+      const b = el('button', { textContent: '+ ' + card.title, title: 'Näytä Gantt-kaaviossa' });
+      b.onclick = () => { delete card.gantt; save(); render(); };
+      items.append(b);
+    }
+    wrap.append(el('div', { className: 'cal-nodate' }, el('h4', { textContent: `Piilotettu Gantt-kaaviosta (${hidden.length})` }), items));
+  }
+}
+
+// Raahaus Gantt-kaaviossa: pudotus toisen tehtävän päälle tekee raahatusta tehtävästä sen edeltäjän.
+// Pelkkä klikkaus avaa kortin.
+function ganttDrag(ctx, handle, card) {
+  handle.onpointerdown = e => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const sx = e.clientX, sy = e.clientY;
+    let line = null, target = null, ok = false;
+    const clear = () => document.querySelectorAll('.drop-ok, .drop-bad').forEach(n => n.classList.remove('drop-ok', 'drop-bad'));
+    const move = ev => {
+      if (!line) {
+        if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < 5) return;
+        line = svgEl('path', { class: 'tmp', 'marker-end': 'url(#g-arr-tmp)' });
+        ctx.svg.append(line);
+        handle.classList.add('dragging');
+      }
+      const r = ctx.overlay.getBoundingClientRect(), from = ctx.barEnd(card.id);
+      line.setAttribute('d', `M${from.x} ${from.y} L${ev.clientX - r.left} ${ev.clientY - r.top}`);
+      clear();
+      const t = document.elementFromPoint(ev.clientX, ev.clientY)?.closest('.gantt [data-card-id]');
+      target = t && t.dataset.cardId !== card.id ? t.dataset.cardId : null;
+      if (!target) return;
+      ok = canDepend(ctx.p, card.id, target);
+      document.querySelectorAll(`.gantt [data-card-id="${target}"]`).forEach(n => n.classList.add(ok ? 'drop-ok' : 'drop-bad'));
+    };
+    const up = ev => {
+      removeEventListener('pointermove', move);
+      removeEventListener('pointerup', up);
+      removeEventListener('pointercancel', up);
+      clear();
+      if (!line) { if (ev.type === 'pointerup') openCardDialog(null, card.id); return; }
+      line.remove();
+      handle.classList.remove('dragging');
+      if (ev.type === 'pointerup' && target && ok) { addDependency(ctx.p, card.id, target); save(); render(); }
+    };
+    addEventListener('pointermove', move);
+    addEventListener('pointerup', up);
+    addEventListener('pointercancel', up);
+  };
+}
+
 // ---------- RACI-matriisi ----------
 function renderMatrix(p, board) {
   const wrap = el('div', { className: 'matrix-wrap' });
@@ -804,7 +1197,9 @@ function renderMatrix(p, board) {
     for (const card of col.cards) {
       if (!cardVisible(p, card)) continue;
       const row = el('tr');
-      const task = el('td', { className: 'task', textContent: card.title, title: 'Avaa kortti' });
+      const task = el('td', { className: 'task', title: 'Avaa kortti' });
+      if (card.priority) task.append(prioBadge(card.priority));
+      task.append(card.title);
       task.onclick = () => openCardDialog(null, card.id);
       row.append(task);
 
@@ -1034,7 +1429,7 @@ function renderArchiveView(p) {
   board.innerHTML = '';
   for (const col of p.columns) {
     const cards = el('div', { className: 'cards' });
-    for (const card of col.cards) cards.append(renderCard(card, p.people, true));
+    for (const card of col.cards) cards.append(renderCard(card, p, true));
     const head = el('div', { className: 'column-head' },
       el('h3', { textContent: col.title, style: 'cursor:default' }),
       el('span', { className: 'count', textContent: col.cards.length }));
@@ -1073,6 +1468,7 @@ function setupDropZone(zone) {
     if (before) index = target.findIndex(c => c.id === before.dataset.cardId);
     else if (after) index = target.findIndex(c => c.id === after.dataset.cardId) + 1;
     target.splice(index, 0, card);
+    sortByDeps(p);
     save(); render();
   };
 }
@@ -1090,6 +1486,51 @@ const dialog = $('#cardDialog');
 let editing = null; // { colId, cardId }
 let selectedColor = 'transparent';
 let draftRaci = {};
+let draftPriority = '';
+let draftDeps = [];
+
+function renderDepsPicker() {
+  const p = activeProject();
+  const selfId = editing.cardId;
+  const wrap = $('#cardDeps');
+  wrap.innerHTML = '';
+  const list = el('div', { className: 'deps-list' });
+  for (const id of draftDeps) {
+    const f = findCard(p, id);
+    if (!f) continue;
+    const x = el('button', { type: 'button', textContent: '✕', title: 'Poista riippuvuus' });
+    x.onclick = () => { draftDeps = draftDeps.filter(d => d !== id); renderDepsPicker(); };
+    list.append(el('span', { className: 'dep-chip' + (isDoneCol(p, f.col) ? ' done' : ''), title: `Sarake: ${f.col.title}` }, f.card.title, x));
+  }
+  if (list.children.length) wrap.append(list);
+  const sel = el('select', { className: 'dep-add' });
+  sel.append(el('option', { value: '', textContent: '+ Lisää edeltävä tehtävä…' }));
+  for (const col of p.columns) {
+    const group = el('optgroup', { label: col.title });
+    for (const c of col.cards) {
+      if (c.id === selfId || draftDeps.includes(c.id)) continue;
+      if (selfId && dependsOn(p, c.id, selfId)) continue; // estää kehän
+      group.append(el('option', { value: c.id, textContent: c.title }));
+    }
+    if (group.children.length) sel.append(group);
+  }
+  sel.onchange = () => { if (sel.value) { draftDeps.push(sel.value); renderDepsPicker(); } };
+  wrap.append(sel);
+}
+
+function renderPriorityPicker() {
+  const wrap = $('#cardPriority');
+  wrap.innerHTML = '';
+  for (const prio of ['', ...Object.keys(PRIORITIES)]) {
+    const on = draftPriority === prio;
+    const b = el('button', {
+      type: 'button', textContent: prio || '–', title: prio ? PRIORITIES[prio] : 'Ei tärkeyttä',
+      className: on ? (prio ? `on prio-${prio}` : 'on none') : '',
+    });
+    b.onclick = () => { draftPriority = prio; renderPriorityPicker(); };
+    wrap.append(b);
+  }
+}
 
 function renderRaciPicker() {
   const wrap = $('#cardRaci');
@@ -1132,9 +1573,15 @@ function openCardDialog(colId, cardId, presetDue = '') {
   $('#cardDesc').value = found?.card.desc ?? '';
   $('#cardDue').value = found?.card.due ?? presetDue;
   setProgressInput(found?.card.progress ?? 0);
+  $('#cardDuration').value = found?.card.duration ?? 1;
+  $('#cardGantt').checked = found?.card.gantt !== false;
+  draftDeps = [...(found ? depsOf(found.card) : [])];
+  renderDepsPicker();
   selectedColor = found?.card.color ?? 'transparent';
   $('#deleteCard').hidden = !found;
   draftRaci = { ...(found?.card.raci ?? {}) };
+  draftPriority = found?.card.priority ?? '';
+  renderPriorityPicker();
   renderColorPicker();
   renderRaciPicker();
   dialog.showModal();
@@ -1147,18 +1594,26 @@ $('#cardForm').onsubmit = () => {
   const desc = $('#cardDesc').value.trim();
   const due = $('#cardDue').value || undefined;
   const progress = Number($('#cardProgress').value) || undefined;
+  const priority = draftPriority || undefined;
+  const duration = Math.max(1, Math.round(Number($('#cardDuration').value) || 1));
   const p = activeProject();
+  let card;
   if (editing.cardId) {
-    const card = findCard(p, editing.cardId).card;
-    Object.assign(card, { title, desc, color: selectedColor, raci: draftRaci, due, progress });
-    if (!due) delete card.due;
-    if (!progress) delete card.progress;
+    card = findCard(p, editing.cardId).card;
+    Object.assign(card, { title, desc, color: selectedColor, raci: draftRaci });
   } else {
-    const card = { id: uid(), title, desc, color: selectedColor, raci: draftRaci };
-    if (due) card.due = due;
-    if (progress) card.progress = progress;
+    card = { id: uid(), title, desc, color: selectedColor, raci: draftRaci };
     p.columns.find(c => c.id === editing.colId).cards.push(card);
   }
+  // Valinnaiset kentät tallennetaan vain, jos ne on asetettu
+  const opt = (k, v) => v === undefined ? delete card[k] : card[k] = v;
+  opt('due', due);
+  opt('progress', progress);
+  opt('priority', priority);
+  opt('duration', duration > 1 ? duration : undefined);
+  opt('deps', draftDeps.length ? [...draftDeps] : undefined);
+  opt('gantt', $('#cardGantt').checked ? undefined : false);
+  sortByDeps(p);
   save(); render();
 };
 
@@ -1179,7 +1634,9 @@ for (const v of [0, 25, 50, 75, 100]) {
 $('#deleteCard').onclick = () => {
   const found = findCard(activeProject(), editing.cardId);
   if (found && confirm(`Poistetaanko kortti "${found.card.title}"?`)) {
+    const p = activeProject();
     found.col.cards.splice(found.index, 1);
+    for (const col of p.columns) for (const c of col.cards) if (depsOf(c).includes(found.card.id)) removeDependency(p, found.card.id, c);
     save(); render(); dialog.close();
   }
 };
