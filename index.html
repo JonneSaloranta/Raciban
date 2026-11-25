@@ -82,7 +82,7 @@
   }
   aside h1 { font-size: 18px; margin: 0 0 16px; letter-spacing: .5px; }
   aside h2 { font-size: 11px; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; letter-spacing: 1px; }
-  #projectList { list-style: none; padding: 0; margin: 0 0 12px; overflow-y: auto; flex: 1; }
+  #projectList { list-style: none; padding: 0; margin: 0 0 12px; overflow-y: auto; flex: 1; min-height: 76px; }
   #projectList li {
     padding: 8px 10px; border-radius: 6px; cursor: pointer; display: flex;
     justify-content: space-between; align-items: center; margin-bottom: 2px;
@@ -125,6 +125,19 @@
     background: var(--panel); color: var(--ink); }
   .filter.active select { border-color: var(--ink); font-weight: 600; }
   .filter .clear { padding: 4px 8px; }
+  .search input { width: 220px; padding: 5px 8px; font-size: 13px; }
+  .search.active input { border-color: var(--ink); }
+  .search .clear { padding: 4px 8px; }
+  .search-info { font-size: 12px; color: var(--muted); padding: 6px 24px; border-bottom: 1px solid var(--line); }
+
+  /* Arkistoidut tehtävät */
+  .archived-tasks { flex: 1; align-self: stretch; min-width: 0; }
+  .arch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; align-items: start; }
+  .arch-item { background: var(--col); border-radius: 10px; padding: 8px; }
+  .arch-item .card { margin: 0; cursor: default; }
+  .arch-meta { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 11px; color: var(--muted); }
+  .arch-meta .info { flex: 1; min-width: 0; line-height: 1.4; }
+  .arch-meta button { font-size: 12px; padding: 3px 8px; }
 
   /* Pääalue */
   main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
@@ -268,8 +281,37 @@
   .hint { font-size: 12px; color: var(--muted); }
 
   /* Henkilödialogi */
-  .person-row { display: flex; gap: 6px; margin-bottom: 6px; }
+  .person-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
   .person-row input { flex: 1; }
+  .person-row .pname { flex: 1; min-width: 0; font-size: 14px; padding: 6px 0; }
+  .person-row .pname .hint { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .person-row select { font: inherit; flex: 1; padding: 6px; border: 1px solid var(--line); border-radius: 6px;
+    background: var(--input); color: var(--ink); }
+  dialog.wide { width: min(680px, 94vw); }
+  .gp-list { max-height: 60vh; overflow-y: auto; margin-top: 12px; display: flex; flex-direction: column; gap: 10px; }
+  .gp-item { border: 1px solid var(--line); border-radius: 8px; padding: 10px; background: var(--bg); }
+  .gp-item .row { display: flex; gap: 6px; }
+  .gp-item .row input { flex: 1; font-weight: 600; }
+  .gp-item textarea { min-height: 54px; margin-top: 6px; font-size: 13px; }
+  .gp-item .meta { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+  .gp-item .meta .chip { display: inline-block; background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 0 8px; margin: 2px 4px 0 0; cursor: pointer; color: var(--ink); }
+  .gp-item .meta .chip:hover { border-color: var(--muted); }
+  .gp-item .meta .chip.archived { color: var(--muted); font-style: italic; }
+  .gp-item mark { background: var(--soon-bg); color: inherit; border-radius: 2px; }
+  #addProject { margin-bottom: 6px; }
+  .ps-results { max-height: 220px; overflow-y: auto; margin-top: 6px; border: 1px solid var(--line); border-radius: 6px; }
+  .ps-results:empty { display: none; }
+  .ps-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; cursor: pointer; border-bottom: 1px solid var(--line); }
+  .ps-item:last-child { border-bottom: none; }
+  .ps-item:hover, .ps-item.sel { background: var(--hover); }
+  .ps-item .who { flex: 1; min-width: 0; font-size: 14px; }
+  .ps-item .who .hint { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ps-item .act { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .ps-item.sel .act { color: var(--ink); font-weight: 600; }
+  .ps-item.create .who { font-style: italic; }
+  .ps-results mark, .person-row mark { background: var(--soon-bg); color: inherit; border-radius: 2px; }
+  .ps-empty { padding: 8px 10px; font-size: 13px; color: var(--muted); }
 
   /* RACI-matriisi */
   .matrix-wrap { flex: 1; overflow: auto; }
@@ -282,6 +324,12 @@
     text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
   .matrix td.cell { cursor: pointer; width: 56px; user-select: none; }
   .matrix td.cell:hover { background: var(--bg); }
+  .matrix-tools { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+  .matrix-tools input[type=search] { width: 240px; padding: 5px 8px; font-size: 13px; }
+  .matrix-tools.active input[type=search] { border-color: var(--ink); }
+  .matrix-tools label { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+  .matrix-tools label input { width: auto; margin: 0; }
+  .matrix th mark { background: var(--soon-bg); color: inherit; border-radius: 2px; }
   .matrix td.warn { color: var(--accent); font-size: 12px; text-align: left; white-space: nowrap; }
   /* Gantt */
   .gantt { flex: 1; min-width: 0; align-self: stretch; display: flex; flex-direction: column; }
@@ -353,6 +401,7 @@
   <h2>Projektit</h2>
   <ul id="projectList"></ul>
   <button class="primary" id="addProject">+ Uusi projekti</button>
+  <button id="globalPeopleBtn" title="Kaikki henkilöt, joita voi käyttää missä tahansa projektissa">👥 Henkilöt</button>
   <details id="archiveSection">
     <summary id="archiveSummary">Arkisto</summary>
     <div class="archive-folder" id="archiveFolder"></div>
@@ -415,6 +464,7 @@
     <div id="cardRaci"></div>
     <div class="dialog-actions">
       <button type="button" class="danger" id="deleteCard">Poista</button>
+      <button type="button" id="archiveCardBtn" title="Siirrä tehtävä projektin arkistoon. Sen voi palauttaa myöhemmin.">📦 Arkistoi</button>
       <span class="spacer"></span>
       <button type="button" id="cancelCard">Peruuta</button>
       <button type="submit" class="primary">Tallenna</button>
@@ -425,13 +475,31 @@
 <dialog id="peopleDialog">
   <h3>Projektin henkilöt</h3>
   <div id="peopleList"></div>
-  <form id="addPersonForm" class="person-row" style="margin-top:12px">
-    <input id="newPerson" placeholder="Uuden henkilön nimi" autocomplete="off">
-    <button type="submit" class="primary">Lisää</button>
+  <label for="personSearch" style="margin-top:16px">Lisää henkilö projektiin</label>
+  <input type="search" id="personSearch" autocomplete="off"
+    placeholder="🔎 Hae nimellä, muistiinpanolla tai projektilla – tai kirjoita uuden henkilön nimi"
+    title="↑↓ valitsee, Enter lisää, Esc tyhjentää">
+  <div class="ps-results" id="personResults"></div>
+  <div class="dialog-actions">
+    <button type="button" id="openGlobalPeople">Kaikki henkilöt…</button>
+    <span class="spacer"></span>
+    <button type="button" id="closePeople">Valmis</button>
+  </div>
+</dialog>
+
+<dialog id="globalPeopleDialog" class="wide">
+  <h3>Henkilöt</h3>
+  <p class="hint" style="margin:-8px 0 12px">Henkilöt ovat yhteisiä kaikille projekteille. Nimen ja muistiinpanon muutos näkyy kaikissa projekteissa.</p>
+  <input type="search" id="gpSearch" placeholder="🔎 Hae nimestä, muistiinpanosta, projektista tai tehtävästä…" autocomplete="off">
+  <div class="hint" id="gpCount" style="margin-top:6px"></div>
+  <div class="gp-list" id="gpList"></div>
+  <form id="gpAddForm" class="person-row" style="margin-top:12px">
+    <input id="gpNewName" placeholder="Uuden henkilön nimi" autocomplete="off">
+    <button type="submit" class="primary">Lisää henkilö</button>
   </form>
   <div class="dialog-actions">
     <span class="spacer"></span>
-    <button type="button" id="closePeople">Valmis</button>
+    <button type="button" id="closeGlobalPeople">Valmis</button>
   </div>
 </dialog>
 
@@ -465,7 +533,7 @@ function load() {
     const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (data && Array.isArray(data.projects)) return normalize(data);
   } catch {}
-  return { projects: [], archive: [], activeId: null, archiveViewId: null, view: 'board' };
+  return { projects: [], archive: [], people: [], activeId: null, archiveViewId: null, view: 'board' };
 }
 
 // Täydentää vanhemmasta versiosta puuttuvat kentät
@@ -473,12 +541,43 @@ function normalize(data) {
   data.view ??= 'board';
   data.archive ??= [];
   data.archiveViewId ??= null;
+  data.people ??= [];
+  for (const person of data.people) person.note ??= '';
   for (const p of [...data.projects, ...data.archive]) {
-    p.people ??= [];
-    for (const col of p.columns) for (const card of col.cards) card.raci ??= {};
+    p.archivedCards ??= [];
+    adoptPeople(p, data.people);
   }
   return data;
 }
+
+// Henkilöt ovat globaaleja (state.people); projekti tallentaa jäsentensä id:t (p.memberIds).
+// Vanhassa muodossa ja projektitiedostoissa henkilöt ovat projektin sisällä (p.people) – ne liitetään
+// globaaliin listaan id:n tai saman nimen perusteella, ja RACI-roolit ohjataan yhdistettyyn henkilöön.
+function adoptPeople(p, people) {
+  const ids = new Set(p.memberIds ?? []);
+  const remap = {};
+  const norm = n => n.trim().toLowerCase();
+  for (const person of Array.isArray(p.people) ? p.people : []) {
+    let g = people.find(x => x.id === person.id) ?? people.find(x => norm(x.name) === norm(person.name));
+    if (!g) people.push(g = { id: person.id, name: person.name, note: person.note ?? '' });
+    else if (!g.note && person.note) g.note = person.note;
+    if (g.id !== person.id) remap[person.id] = g.id;
+    ids.add(g.id);
+  }
+  delete p.people;
+  p.memberIds = [...ids].filter(id => people.some(x => x.id === id));
+  for (const card of allCards(p)) {
+    card.raci ??= {};
+    for (const [from, to] of Object.entries(remap)) {
+      if (!(from in card.raci)) continue;
+      card.raci[to] ??= card.raci[from];
+      delete card.raci[from];
+    }
+  }
+}
+
+// Projektin jäsenet globaalista henkilölistasta
+const members = p => p.memberIds.map(id => state.people.find(x => x.id === id)).filter(Boolean);
 
 // Asettaa roolin; kullakin tehtävällä voi olla vain yksi A
 function setRole(raci, personId, role) {
@@ -496,11 +595,47 @@ function raciWarnings(card) {
 }
 
 // Henkilösuodatin (ei tallenneta, projektikohtainen istunnon ajan)
-const filters = {}; // projectId -> { person: '' | personId | '__none__', role: '' | 'R'|'A'|'C'|'I' }
-const getFilter = p => (filters[p.id] ??= { person: '', role: '' });
-const filterActive = p => !!getFilter(p).person;
+const filters = {}; // projectId -> { person: '' | personId | '__none__', role: '' | 'R'|'A'|'C'|'I', q: hakusana }
+const getFilter = p => (filters[p.id] ??= { person: '', role: '', q: '' });
+const searchTerms = p => getFilter(p).q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+const filterActive = p => !!getFilter(p).person || searchTerms(p).length > 0;
 
-function cardVisible(p, card) {
+// Kaikki projektin kortit, myös arkistoidut
+function allCards(p) { return [...p.columns.flatMap(c => c.cards), ...(p.archivedCards ?? [])]; }
+
+// Teksti, josta tehtävää haetaan: kaikki kortilla näkyvät tiedot
+function cardSearchText(p, card, colTitle) {
+  const parts = [card.title, card.desc, colTitle];
+  if (card.priority) parts.push(card.priority, PRIORITIES[card.priority]);
+  if (card.due) parts.push(card.due, fmtDue(card.due), parseDate(card.due).toLocaleDateString('fi-FI'), 'deadline');
+  if (card.progress) parts.push(`${card.progress} %`, `${card.progress}%`);
+  for (const pp of members(p)) {
+    const r = card.raci[pp.id];
+    if (r) parts.push(pp.name, `${r}:${pp.name}`, ROLES[r]);
+  }
+  if (!Object.keys(card.raci).length) parts.push('ei vastuuhenkilöä');
+  if (card.archivedAt) parts.push('arkistoitu', fmtDate(card.archivedAt));
+  return parts.filter(Boolean).join('\n').toLowerCase().replace(/: /g, ':');
+}
+
+// Edeltävien tehtävien nimet haetaan vain etuliitteellä "edeltävä:", jotteivät ne sotke tavallista hakua
+const DEP_PREFIX = 'edeltävä:';
+const depsSearchText = (p, card) => depsOf(card)
+  .map(id => (findCard(p, id)?.card ?? p.archivedCards?.find(c => c.id === id))?.title)
+  .filter(Boolean).join('\n').toLowerCase();
+
+// Kaikkien hakusanojen täytyy löytyä (JA-haku)
+function matchesSearch(p, card, colTitle = '') {
+  const terms = searchTerms(p);
+  if (!terms.length) return true;
+  const text = cardSearchText(p, card, colTitle);
+  return terms.every(t => t.startsWith(DEP_PREFIX)
+    ? depsSearchText(p, card).includes(t.slice(DEP_PREFIX.length))
+    : text.includes(t));
+}
+
+function cardVisible(p, card, colTitle = '') {
+  if (!matchesSearch(p, card, colTitle)) return false;
   const { person, role } = getFilter(p);
   if (!person) return true;
   if (person === '__none__') return Object.keys(card.raci).length === 0;
@@ -511,11 +646,11 @@ function cardVisible(p, card) {
 function renderFilter(p) {
   const f = getFilter(p);
   // Poistettu henkilö → nollaa suodatin
-  if (f.person && f.person !== '__none__' && !p.people.some(x => x.id === f.person)) f.person = '';
+  if (f.person && f.person !== '__none__' && !p.memberIds.includes(f.person)) f.person = '';
 
   const person = el('select', { title: 'Näytä vain valitun henkilön tehtävät' });
   person.append(el('option', { value: '', textContent: 'Kaikki henkilöt' }));
-  for (const pp of p.people) person.append(el('option', { value: pp.id, textContent: pp.name }));
+  for (const pp of members(p)) person.append(el('option', { value: pp.id, textContent: pp.name }));
   person.append(el('option', { value: '__none__', textContent: '– Ei vastuuhenkilöä –' }));
   person.value = f.person;
   person.onchange = () => { f.person = person.value; if (!f.person || f.person === '__none__') f.role = ''; render(); };
@@ -537,6 +672,41 @@ function renderFilter(p) {
   }
   return wrap;
 }
+
+function renderSearch(p, onChange) {
+  const f = getFilter(p);
+  const input = el('input', {
+    type: 'search', id: 'search', value: f.q, autocomplete: 'off', placeholder: '🔎 Hae tehtäviä…  ( / )',
+    title: 'Hakee otsikosta, kuvauksesta, sarakkeesta, henkilöistä ja rooleista (esim. "A:Matti"), ' +
+      'tärkeydestä (P1), deadlinesta (esim. 24.12.), valmiusasteesta (50 %) ja edeltävistä tehtävistä (edeltävä:nimi).\n' +
+      'Useampi sana: kaikkien täytyy löytyä. Esc tyhjentää.',
+  });
+  const wrap = el('div', { className: 'filter search' }, input);
+  const update = () => { wrap.classList.toggle('active', !!f.q.trim()); onChange(); };
+  input.oninput = () => { f.q = input.value; update(); };
+  input.onkeydown = e => {
+    if (e.key === 'Escape' && input.value) { e.preventDefault(); input.value = f.q = ''; update(); }
+  };
+  wrap.classList.toggle('active', !!f.q.trim());
+  return wrap;
+}
+
+// Hakutulosten määrä hakukentän alla
+function renderSearchInfo(p, shown, total) {
+  const banner = $('#banner');
+  banner.querySelector('.search-info')?.remove();
+  if (!searchTerms(p).length) return;
+  banner.append(el('div', { className: 'search-info',
+    textContent: shown ? `Haku: ${shown}/${total} tehtävää vastaa hakua "${getFilter(p).q.trim()}"` : `Ei hakua "${getFilter(p).q.trim()}" vastaavia tehtäviä.` }));
+}
+
+// "/" kohdistaa hakukenttään
+addEventListener('keydown', e => {
+  if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.target.closest?.('input, textarea, select, [contenteditable]') || document.querySelector('dialog[open]')) return;
+  const s = $('#search');
+  if (s) { e.preventDefault(); s.focus(); s.select(); }
+});
 
 // ---------- Päivämäärät ----------
 const pad = n => String(n).padStart(2, '0');
@@ -588,7 +758,8 @@ function newProject(name) {
   return {
     id: uid(),
     name,
-    people: [],
+    memberIds: [],
+    archivedCards: [],
     columns: ['Tehtävänä', 'Työn alla', 'Valmis'].map(title => ({ id: uid(), title, cards: [] })),
   };
 }
@@ -611,6 +782,7 @@ function render() {
 }
 
 function renderProjects() {
+  $('#globalPeopleBtn').textContent = `👥 Henkilöt (${state.people.length})`;
   const list = $('#projectList');
   list.innerHTML = '';
   for (const p of state.projects) {
@@ -657,16 +829,17 @@ function renderHeader() {
     save(); render();
   };
   const toggle = el('div', { className: 'view-toggle' });
-  for (const [view, label] of [['board', 'Taulu'], ['calendar', 'Kalenteri'], ['gantt', 'Gantt'], ['raci', 'RACI-matriisi']]) {
+  for (const [view, label] of [['board', 'Taulu'], ['calendar', 'Kalenteri'], ['gantt', 'Gantt'], ['raci', 'RACI-matriisi'],
+    ['archived', `📦 Arkistoidut (${p.archivedCards.length})`]]) {
     const b = el('button', { textContent: label, className: state.view === view ? 'on' : '' });
     b.onclick = () => { state.view = view; save(); render(); };
     toggle.append(b);
   }
-  const people = el('button', { textContent: `👥 Henkilöt (${p.people.length})` });
+  const people = el('button', { textContent: `👥 Henkilöt (${p.memberIds.length})` });
   people.onclick = openPeopleDialog;
-  const archive = el('button', { textContent: '📦 Arkistoi', title: 'Siirrä projekti arkistoon' });
+  const archive = el('button', { textContent: '📦 Arkistoi projekti', title: 'Siirrä koko projekti arkistoon' });
   archive.onclick = () => archiveProject(p);
-  header.append(title, renderFilter(p), toggle, people, archive, del);
+  header.append(title, renderSearch(p, renderBoard), renderFilter(p), toggle, people, archive, del);
 }
 
 function renderBoard() {
@@ -679,9 +852,17 @@ function renderBoard() {
       el('p', { textContent: 'Luo uusi projekti vasemmalta.' })));
     return;
   }
+  if (state.view === 'archived') {
+    const shown = p.archivedCards.filter(c => cardVisible(p, c, c.colTitle)).length;
+    renderSearchInfo(p, shown, p.archivedCards.length);
+  } else {
+    const all = p.columns.flatMap(col => col.cards.map(card => ({ col, card })));
+    renderSearchInfo(p, all.filter(x => cardVisible(p, x.card, x.col.title)).length, all.length);
+  }
   if (state.view === 'raci') { renderMatrix(p, board); return; }
   if (state.view === 'calendar') { renderCalendar(p, board); return; }
   if (state.view === 'gantt') { renderGantt(p, board); return; }
+  if (state.view === 'archived') { renderArchivedTasks(p, board); return; }
 
   for (const col of p.columns) board.append(renderColumn(p, col));
 
@@ -694,7 +875,7 @@ function renderBoard() {
 }
 
 function visibleCount(p, col) {
-  const n = col.cards.filter(c => cardVisible(p, c)).length;
+  const n = col.cards.filter(c => cardVisible(p, c, col.title)).length;
   return filterActive(p) ? `${n}/${col.cards.length}` : n;
 }
 
@@ -722,10 +903,19 @@ function renderColumn(project, col) {
 
   const head = el('div', { className: 'column-head' },
     title, el('span', { className: 'count', textContent: visibleCount(project, col) }), left, right, del);
+  if (isDoneCol(project, col) && col.cards.length) {
+    const arch = el('button', { className: 'icon', textContent: '📦', title: 'Arkistoi kaikki sarakkeen tehtävät' });
+    arch.onclick = () => {
+      if (!confirm(`Arkistoidaanko sarakkeen "${col.title}" kaikki ${col.cards.length} tehtävää?\n\nNe löytyvät näkymästä "Arkistoidut", josta ne voi palauttaa.`)) return;
+      for (const c of [...col.cards]) archiveCard(project, c.id);
+      save(); render();
+    };
+    head.insertBefore(arch, left);
+  }
 
   const cards = el('div', { className: 'cards' });
   cards.dataset.colId = col.id;
-  for (const card of col.cards) if (cardVisible(project, card)) cards.append(renderCard(card, project, false, isDoneCol(project, col)));
+  for (const card of col.cards) if (cardVisible(project, card, col.title)) cards.append(renderCard(card, project, false, isDoneCol(project, col)));
   setupDropZone(cards);
 
   const add = el('button', { className: 'add-card', textContent: '+ Lisää kortti' });
@@ -735,7 +925,7 @@ function renderColumn(project, col) {
 }
 
 function renderCard(card, project, readOnly = false, done = false) {
-  const people = project.people;
+  const people = members(project);
   const titleEl = el('div', { className: 'title' });
   if (card.priority) titleEl.append(prioBadge(card.priority));
   titleEl.append(card.title);
@@ -795,7 +985,7 @@ function calItem(p, col, card) {
   if (card.priority) item.append(prioBadge(card.priority));
   item.append(card.title);
   if (card.progress) item.append(el('span', { className: 'pct', textContent: card.progress + ' %' }));
-  const roles = p.people.filter(x => card.raci[x.id]).map(x => `${card.raci[x.id]}: ${x.name}`);
+  const roles = members(p).filter(x => card.raci[x.id]).map(x => `${card.raci[x.id]}: ${x.name}`);
   item.title = [card.title, `Sarake: ${col.title}`, card.priority ? `Tärkeys: ${PRIORITIES[card.priority]}` : '', due?.title, card.progress ? `Valmiusaste ${card.progress} %` : '', ...roles].filter(Boolean).join('\n');
   if (card.color && card.color !== 'transparent') item.style.borderLeftColor = card.color;
   item.onclick = () => openCardDialog(null, card.id);
@@ -835,7 +1025,7 @@ function renderCalendar(p, board) {
   const byDate = {};
   const noDate = [];
   for (const col of p.columns) for (const card of col.cards) {
-    if (!cardVisible(p, card)) continue;
+    if (!cardVisible(p, card, col.title)) continue;
     if (card.due) (byDate[card.due] ??= []).push({ col, card });
     else noDate.push({ col, card });
   }
@@ -973,7 +1163,7 @@ function schedule(p) {
 
 function renderGantt(p, board) {
   const { sched, info } = schedule(p);
-  const visible = [...info.values()].filter(x => cardVisible(p, x.card));
+  const visible = [...info.values()].filter(x => cardVisible(p, x.card, x.col.title));
   const rows = visible.filter(x => x.card.gantt !== false);
   const hidden = visible.filter(x => x.card.gantt === false);
   const order = new Map([...info.keys()].map((id, i) => [id, i]));
@@ -1175,27 +1365,62 @@ function renderMatrix(p, board) {
   }
   wrap.append(legend);
 
-  if (!p.people.length) {
+  const people = members(p);
+  if (!people.length) {
     const add = el('button', { className: 'primary', textContent: 'Lisää henkilöitä' });
     add.onclick = openPeopleDialog;
     wrap.append(el('p', { className: 'hint', textContent: 'Projektissa ei ole vielä henkilöitä. ' }), add);
     return;
   }
 
+  // Henkilöhaku: rajaa matriisin henkilösarakkeet nimen tai muistiinpanon perusteella
+  const f = getFilter(p);
+  f.pq ??= '';
+  const search = el('input', { type: 'search', id: 'matrixPersonSearch', value: f.pq, autocomplete: 'off',
+    placeholder: '👤 Hae henkilöä…', title: 'Hakee henkilön nimestä ja muistiinpanosta. Esc tyhjentää.' });
+  const only = el('input', { type: 'checkbox', checked: !!f.pOnly });
+  const count = el('span', { className: 'hint' });
+  const tools = el('div', { className: 'matrix-tools' }, search,
+    el('label', { title: 'Piilota tehtävät, joissa haetuilla henkilöillä ei ole roolia' }, only, 'Vain heidän tehtävänsä'), count);
+  const tableWrap = el('div');
+  wrap.append(tools, tableWrap, el('p', { className: 'hint',
+    textContent: 'Vinkki: jokaisella tehtävällä pitäisi olla tasan yksi A ja vähintään yksi R. Uusi A korvaa tehtävän edellisen A:n.' }));
+
+  const draw = () => {
+    const terms = f.pq.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    const shown = people.filter(x => terms.every(t => `${x.name}\n${x.note}`.toLowerCase().includes(t)));
+    tools.classList.toggle('active', terms.length > 0);
+    only.parentElement.hidden = !terms.length;
+    count.textContent = terms.length ? `${shown.length}/${people.length} henkilöä` : '';
+    tableWrap.innerHTML = '';
+    if (!shown.length) {
+      tableWrap.append(el('p', { className: 'hint', textContent: `Ei hakua "${f.pq.trim()}" vastaavia henkilöitä projektissa.` }));
+      return;
+    }
+    tableWrap.append(matrixTable(p, shown, terms, terms.length && f.pOnly));
+  };
+  search.oninput = () => { f.pq = search.value; draw(); };
+  search.onkeydown = e => { if (e.key === 'Escape' && search.value) { e.preventDefault(); search.value = f.pq = ''; draw(); } };
+  only.onchange = () => { f.pOnly = only.checked; draw(); };
+  draw();
+}
+
+function matrixTable(p, people, terms = [], onlyTheirs = false) {
   const table = el('table', { className: 'matrix' });
   const headRow = el('tr', {}, el('th', { textContent: 'Tehtävä', style: 'text-align:left' }));
-  for (const person of p.people) headRow.append(el('th', { textContent: person.name }));
+  for (const person of people) headRow.append(el('th', { title: person.note || '' }, highlight(person.name, terms)));
   headRow.append(el('th', { textContent: 'Valmius' }), el('th', { textContent: 'Huomiot' }));
   table.append(el('thead', {}, headRow));
 
   const tbody = el('tbody');
   for (const col of p.columns) {
+    const cards = col.cards.filter(card => cardVisible(p, card, col.title) && (!onlyTheirs || people.some(x => card.raci[x.id])));
     const group = el('tr', { className: 'group' });
-    group.append(el('td', { colSpan: p.people.length + 3, textContent: `${col.title} (${visibleCount(p, col)})` }));
+    group.append(el('td', { colSpan: people.length + 3,
+      textContent: `${col.title} (${onlyTheirs ? `${cards.length}/${col.cards.length}` : visibleCount(p, col)})` }));
     tbody.append(group);
 
-    for (const card of col.cards) {
-      if (!cardVisible(p, card)) continue;
+    for (const card of cards) {
       const row = el('tr');
       const task = el('td', { className: 'task', title: 'Avaa kortti' });
       if (card.priority) task.append(prioBadge(card.priority));
@@ -1203,9 +1428,9 @@ function renderMatrix(p, board) {
       task.onclick = () => openCardDialog(null, card.id);
       row.append(task);
 
-      for (const person of p.people) {
+      for (const person of people) {
         const role = card.raci[person.id];
-        const cell = el('td', { className: 'cell', title: 'Klikkaa vaihtaaksesi roolia (R → A → C → I → tyhjä)' });
+        const cell = el('td', { className: 'cell', title: `${person.name}: klikkaa vaihtaaksesi roolia (R → A → C → I → tyhjä)` });
         if (role) cell.append(el('span', { className: `badge role-${role}`, textContent: role }));
         cell.onclick = () => {
           const next = ROLE_ORDER[ROLE_ORDER.indexOf(role) + 1] ?? null; // undefined → R, I → tyhjä
@@ -1220,8 +1445,7 @@ function renderMatrix(p, board) {
     }
   }
   table.append(tbody);
-  wrap.append(table, el('p', { className: 'hint',
-    textContent: 'Vinkki: jokaisella tehtävällä pitäisi olla tasan yksi A ja vähintään yksi R. Uusi A korvaa tehtävän edellisen A:n.' }));
+  return table;
 }
 
 // ---------- Henkilöt ----------
@@ -1229,42 +1453,233 @@ const peopleDialog = $('#peopleDialog');
 
 function openPeopleDialog() {
   renderPeopleList();
+  $('#personSearch').value = '';
+  psSel = 0;
+  renderPersonResults();
   peopleDialog.showModal();
-  $('#newPerson').focus();
+  $('#personSearch').focus();
 }
 
 function renderPeopleList() {
   const p = activeProject();
   const list = $('#peopleList');
   list.innerHTML = '';
-  if (!p.people.length) list.append(el('p', { className: 'hint', textContent: 'Ei henkilöitä vielä.' }));
-  for (const person of p.people) {
-    const input = el('input', { value: person.name });
-    input.onchange = () => {
-      if (input.value.trim()) { person.name = input.value.trim(); save(); render(); }
-      else input.value = person.name;
+  const people = members(p);
+  if (!people.length) list.append(el('p', { className: 'hint', textContent: 'Projektissa ei ole vielä henkilöitä.' }));
+  for (const person of people) {
+    const roles = allCards(p).filter(c => c.raci[person.id]).length;
+    const name = el('div', { className: 'pname' }, person.name);
+    if (person.note) name.append(el('span', { className: 'hint', textContent: person.note, title: person.note }));
+    const del = el('button', { className: 'danger', textContent: 'Poista projektista',
+      title: 'Henkilö säilyy henkilölistassa ja muissa projekteissa' });
+    del.onclick = () => {
+      if (roles && !confirm(`Poistetaanko ${person.name} projektista? Hänen RACI-roolinsa poistetaan tämän projektin ${roles} tehtävästä.`)) return;
+      p.memberIds = p.memberIds.filter(id => id !== person.id);
+      for (const card of allCards(p)) delete card.raci[person.id];
+      save(); render(); renderPeopleList();
+    };
+    list.append(el('div', { className: 'person-row' }, name, del));
+  }
+  renderPersonResults(); // projektista poistettu henkilö tulee taas lisättäväksi
+}
+
+// Henkilöhaku projektiin lisäämistä varten: näyttää hakua vastaavat henkilöt, jotka eivät vielä ole projektissa.
+// Jos samannimistä henkilöä ei ole, viimeisenä vaihtoehtona on uuden henkilön luonti.
+let psSel = 0;     // valitun tuloksen indeksi
+let psOptions = []; // [{ add: () => void }]
+
+function renderPersonResults() {
+  const p = activeProject();
+  const box = $('#personResults');
+  box.innerHTML = '';
+  const query = $('#personSearch').value.trim();
+  const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+  const others = state.people.filter(x => !p.memberIds.includes(x.id)).sort((a, b) => a.name.localeCompare(b.name, 'fi'));
+  const projectsOf = x => personUsage(x).map(u => u.p.name);
+  const hits = others.filter(x => {
+    const text = [x.name, x.note, ...projectsOf(x)].join('\n').toLowerCase();
+    return terms.every(t => text.includes(t));
+  });
+  psOptions = [];
+  const option = (cls, who, act, add) => {
+    const i = psOptions.length;
+    const item = el('div', { className: 'ps-item ' + cls }, who, el('span', { className: 'act', textContent: act }));
+    item.onmousedown = e => e.preventDefault(); // pitää kohdistuksen hakukentässä
+    item.onclick = add;
+    item.onmousemove = () => { if (psSel !== i) { psSel = i; markPersonSel(); } };
+    psOptions.push({ add });
+    box.append(item);
+  };
+  for (const x of hits) {
+    const who = el('div', { className: 'who' }, highlight(x.name, terms));
+    const projects = projectsOf(x);
+    const sub = [x.note.split('\n')[0], projects.length ? `Projektit: ${projects.join(', ')}` : ''].filter(Boolean).join(' · ');
+    if (sub) who.append(el('span', { className: 'hint', title: x.note }, highlight(sub, terms)));
+    option('', who, '+ Lisää', () => addPersonToProject(x));
+  }
+  const exact = state.people.find(x => x.name.toLowerCase() === query.toLowerCase());
+  if (query && !exact) {
+    option('create', el('div', { className: 'who' }, `Luo uusi henkilö "${query}"`), '+ Luo ja lisää', () => {
+      const person = { id: uid(), name: query, note: '' };
+      state.people.push(person);
+      addPersonToProject(person);
+    });
+  }
+  // Hakua vastaavat henkilöt, jotka ovat jo projektissa – estää vahingossa luomasta kaksoiskappaletta
+  const inProject = terms.length ? members(p).filter(x => terms.every(t => `${x.name}\n${x.note}`.toLowerCase().includes(t))) : [];
+  if (inProject.length) {
+    box.append(el('div', { className: 'ps-empty' }, 'Jo projektissa: ', highlight(inProject.map(x => x.name).join(', '), terms)));
+  } else if (!psOptions.length) {
+    box.append(el('div', { className: 'ps-empty', textContent: state.people.length
+      ? 'Kaikki henkilöt ovat jo projektissa. Kirjoita nimi luodaksesi uuden.' : 'Kirjoita nimi luodaksesi ensimmäisen henkilön.' }));
+  }
+  psSel = Math.min(psSel, psOptions.length - 1);
+  markPersonSel();
+}
+
+function markPersonSel() {
+  [...$('#personResults').querySelectorAll('.ps-item')].forEach((n, i) => {
+    n.classList.toggle('sel', i === psSel);
+    if (i === psSel) n.scrollIntoView({ block: 'nearest' });
+  });
+}
+
+function addPersonToProject(person) {
+  const p = activeProject();
+  if (!p.memberIds.includes(person.id)) p.memberIds.push(person.id);
+  $('#personSearch').value = '';
+  psSel = 0;
+  save(); render(); renderPeopleList();
+  $('#personSearch').focus();
+}
+
+$('#personSearch').oninput = () => { psSel = 0; renderPersonResults(); };
+$('#personSearch').onkeydown = e => {
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (!psOptions.length) return;
+    psSel = (psSel + (e.key === 'ArrowDown' ? 1 : -1) + psOptions.length) % psOptions.length;
+    markPersonSel();
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    psOptions[psSel]?.add();
+  } else if (e.key === 'Escape' && e.target.value) {
+    e.preventDefault(); // ei sulje dialogia
+    e.target.value = '';
+    psSel = 0;
+    renderPersonResults();
+  }
+};
+
+$('#openGlobalPeople').onclick = () => { peopleDialog.close(); openGlobalPeople(); };
+
+$('#closePeople').onclick = () => peopleDialog.close();
+
+// ---------- Kaikki henkilöt ----------
+const gpDialog = $('#globalPeopleDialog');
+
+function openGlobalPeople(query = '') {
+  $('#gpSearch').value = query;
+  renderGlobalPeople();
+  gpDialog.showModal();
+  $('#gpSearch').focus();
+}
+
+// Henkilön projektit (myös arkistoidut) ja tehtävät, joissa hänellä on rooli
+function personUsage(person) {
+  const out = [];
+  for (const [p, archived] of [...state.projects.map(p => [p, false]), ...state.archive.map(p => [p, true])]) {
+    const tasks = allCards(p).filter(c => c.raci[person.id]).map(c => ({ card: c, role: c.raci[person.id] }));
+    if (p.memberIds.includes(person.id) || tasks.length) out.push({ p, archived, tasks });
+  }
+  return out;
+}
+
+const personSearchText = (person, usage) => [person.name, person.note,
+  ...usage.flatMap(u => [u.p.name, ...u.tasks.map(t => `${t.role}:${t.card.title}`)])].join('\n').toLowerCase();
+
+// Korostaa hakusanat tekstissä
+function highlight(text, terms) {
+  const frag = document.createDocumentFragment();
+  if (!terms.length) { frag.append(text); return frag; }
+  const re = new RegExp(`(${terms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'gi');
+  text.split(re).forEach((part, i) => frag.append(i % 2 ? el('mark', { textContent: part }) : part));
+  return frag;
+}
+
+function renderGlobalPeople() {
+  const list = $('#gpList');
+  list.innerHTML = '';
+  const terms = $('#gpSearch').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const people = [...state.people].sort((a, b) => a.name.localeCompare(b.name, 'fi'));
+  let shown = 0;
+  for (const person of people) {
+    const usage = personUsage(person);
+    const text = personSearchText(person, usage);
+    if (!terms.every(t => text.includes(t))) continue;
+    shown++;
+
+    const name = el('input', { value: person.name, title: 'Nimi' });
+    name.onchange = () => {
+      if (name.value.trim()) { person.name = name.value.trim(); save(); render(); }
+      else name.value = person.name;
     };
     const del = el('button', { className: 'danger', textContent: 'Poista' });
     del.onclick = () => {
-      if (!confirm(`Poistetaanko ${person.name}? Hänen RACI-roolinsa poistetaan kaikista korteista.`)) return;
-      p.people = p.people.filter(x => x.id !== person.id);
-      for (const col of p.columns) for (const card of col.cards) delete card.raci[person.id];
-      save(); render(); renderPeopleList();
+      const roles = usage.reduce((n, u) => n + u.tasks.length, 0);
+      if (!confirm(`Poistetaanko ${person.name} kokonaan?` +
+        (usage.length ? `\n\nHänet poistetaan ${usage.length} projektista ja hänen RACI-roolinsa ${roles} tehtävästä.` : ''))) return;
+      state.people = state.people.filter(x => x.id !== person.id);
+      for (const p of [...state.projects, ...state.archive]) {
+        p.memberIds = p.memberIds.filter(id => id !== person.id);
+        for (const card of allCards(p)) delete card.raci[person.id];
+      }
+      save(); render(); renderGlobalPeople();
     };
-    list.append(el('div', { className: 'person-row' }, input, del));
+    const note = el('textarea', { value: person.note, placeholder: 'Muistiinpano: rooli, yhteystiedot, osaaminen, saatavuus…' });
+    note.oninput = () => { person.note = note.value; save(); };
+
+    const meta = el('div', { className: 'meta' });
+    if (person.note && terms.length) meta.append(el('div', {}, '📝 ', highlight(person.note, terms)));
+    if (!usage.length) meta.append('Ei missään projektissa.');
+    for (const u of usage) {
+      const chip = el('span', { className: 'chip' + (u.archived ? ' archived' : ''),
+        title: (u.archived ? 'Arkistoitu projekti. ' : '') + 'Avaa projekti' +
+          (u.tasks.length ? '\n\n' + u.tasks.map(t => `${t.role}: ${t.card.title}`).join('\n') : '') });
+      chip.append(highlight(u.p.name, terms), ` · ${u.tasks.length} teht.`);
+      chip.onclick = () => {
+        if (u.archived) state.archiveViewId = u.p.id;
+        else { state.activeId = u.p.id; state.archiveViewId = null; }
+        save(); render(); gpDialog.close();
+      };
+      meta.append(chip);
+    }
+    // Hakua vastaavat tehtävät
+    if (terms.length) {
+      const hits = usage.flatMap(u => u.tasks.filter(t => terms.some(term => `${t.role}:${t.card.title}`.toLowerCase().includes(term)))
+        .map(t => `${t.role}: ${t.card.title} (${u.p.name})`));
+      if (hits.length) meta.append(el('div', {}, '✓ ', highlight(hits.join(', '), terms)));
+    }
+    list.append(el('div', { className: 'gp-item' }, el('div', { className: 'row' }, name, del), note, meta));
   }
+  $('#gpCount').textContent = terms.length ? `${shown}/${state.people.length} henkilöä vastaa hakua` : `${state.people.length} henkilöä`;
+  if (!shown) list.append(el('p', { className: 'hint', textContent: state.people.length ? 'Ei hakua vastaavia henkilöitä.' : 'Ei henkilöitä vielä.' }));
 }
 
-$('#addPersonForm').onsubmit = e => {
+$('#gpSearch').oninput = renderGlobalPeople;
+$('#gpAddForm').onsubmit = e => {
   e.preventDefault();
-  const name = $('#newPerson').value.trim();
+  const name = $('#gpNewName').value.trim();
   if (!name) return;
-  activeProject().people.push({ id: uid(), name });
-  $('#newPerson').value = '';
-  save(); render(); renderPeopleList();
+  if (state.people.some(x => x.name.toLowerCase() === name.toLowerCase()) && !confirm(`Henkilö "${name}" on jo olemassa. Lisätäänkö silti?`)) return;
+  state.people.push({ id: uid(), name, note: '' });
+  $('#gpNewName').value = '';
+  $('#gpSearch').value = '';
+  save(); render(); renderGlobalPeople();
 };
-
-$('#closePeople').onclick = () => peopleDialog.close();
+$('#closeGlobalPeople').onclick = () => gpDialog.close();
+gpDialog.addEventListener('close', render);
+$('#globalPeopleBtn').onclick = () => openGlobalPeople();
 
 // ---------- Arkistokansio ----------
 // Chrome/Edge: tiedostot kirjoitetaan käyttäjän valitsemaan kansioon (File System Access API).
@@ -1336,7 +1751,8 @@ function renderArchiveFolder() {
 }
 
 const slug = name => name.toLowerCase().replace(/[^a-z0-9åäö]+/g, '-').replace(/^-|-$/g, '') || 'projekti';
-const archiveData = p => ({ type: 'simple-kanban-project', version: 1, project: p });
+// Projektitiedostoon upotetaan projektin henkilöt, jotta tiedoston voi tuoda toiseen selaimeen
+const archiveData = p => ({ type: 'simple-kanban-project', version: 2, project: { ...p, people: members(p) } });
 const archiveFileName = p => `arkisto-${slug(p.name)}-${p.archivedAt.slice(0, 10)}.json`;
 
 async function fileExists(dir, name) {
@@ -1419,22 +1835,99 @@ function renderArchiveView(p) {
     state.archiveViewId = null;
     save(); render();
   };
-  header.append(el('h2', { textContent: p.name, style: 'cursor:default' }), restore, download, del);
+  header.append(el('h2', { textContent: p.name, style: 'cursor:default' }), renderSearch(p, () => renderArchivedProjectBoard(p)), restore, download, del);
 
   $('#banner').append(el('div', { className: 'archived-banner',
     textContent: `📦 Arkistoitu ${fmtDate(p.archivedAt)} – vain luku. Palauta projekti muokataksesi sitä. ` +
       (p.archiveFile ? `Tiedosto: ${p.archiveFile}` : 'Ei vielä tallennettu tiedostoksi.') }));
 
+  renderArchivedProjectBoard(p);
+}
+
+function renderArchivedProjectBoard(p) {
   const board = $('#board');
   board.innerHTML = '';
-  for (const col of p.columns) {
+  const cols = [...p.columns.map(col => ({ title: col.title, cards: col.cards.map(card => ({ card, colTitle: col.title })) }))];
+  if (p.archivedCards.length) cols.push({ title: '📦 Arkistoidut tehtävät', cards: p.archivedCards.map(card => ({ card, colTitle: card.colTitle })) });
+  let shown = 0, total = 0;
+  for (const col of cols) {
     const cards = el('div', { className: 'cards' });
-    for (const card of col.cards) cards.append(renderCard(card, p, true));
+    const visible = col.cards.filter(x => cardVisible(p, x.card, x.colTitle));
+    for (const { card } of visible) cards.append(renderCard(card, p, true));
+    shown += visible.length; total += col.cards.length;
     const head = el('div', { className: 'column-head' },
       el('h3', { textContent: col.title, style: 'cursor:default' }),
-      el('span', { className: 'count', textContent: col.cards.length }));
+      el('span', { className: 'count', textContent: filterActive(p) ? `${visible.length}/${col.cards.length}` : col.cards.length }));
     board.append(el('div', { className: 'column readonly' }, head, cards));
   }
+  renderSearchInfo(p, shown, total);
+}
+
+// ---------- Arkistoidut tehtävät ----------
+// Arkistoitu kortti säilyttää kaikki tietonsa sekä sarakkeen, josta se arkistoitiin.
+// Riippuvuudet arkistoituun tehtävään säilyvät datassa ja palaavat käyttöön palautuksessa.
+function archiveCard(p, cardId) {
+  const f = findCard(p, cardId);
+  if (!f) return;
+  f.col.cards.splice(f.index, 1);
+  p.archivedCards.push({ ...f.card, colId: f.col.id, colTitle: f.col.title, archivedAt: new Date().toISOString() });
+}
+
+function restoreCard(p, card) {
+  const col = p.columns.find(c => c.id === card.colId) ?? p.columns[0];
+  if (!col) { alert('Lisää projektiin ensin sarake.'); return; }
+  p.archivedCards = p.archivedCards.filter(c => c !== card);
+  const { colId, colTitle, archivedAt, ...clean } = card;
+  col.cards.push(clean);
+  sortByDeps(p);
+  save(); render();
+}
+
+function deleteArchivedCard(p, card) {
+  if (!confirm(`Poistetaanko arkistoitu tehtävä "${card.title}" pysyvästi?`)) return;
+  p.archivedCards = p.archivedCards.filter(c => c !== card);
+  for (const c of allCards(p)) if (depsOf(c).includes(card.id)) removeDependency(p, card.id, c);
+  save(); render();
+}
+
+function renderArchivedTasks(p, board) {
+  const wrap = el('div', { className: 'archived-tasks' });
+  board.append(wrap);
+  const doneCol = p.columns.at(-1);
+  const toolbar = el('div', { className: 'gantt-toolbar' });
+  if (doneCol?.cards.length) {
+    const b = el('button', { textContent: `📦 Arkistoi valmiit (${doneCol.cards.length})`, title: `Arkistoi kaikki sarakkeen "${doneCol.title}" tehtävät` });
+    b.onclick = () => {
+      for (const c of [...doneCol.cards]) archiveCard(p, c.id);
+      save(); render();
+    };
+    toolbar.append(b);
+  }
+  toolbar.append(el('span', { className: 'hint',
+    textContent: 'Arkistoidut tehtävät eivät näy taulussa, kalenterissa, Gantt-kaaviossa eivätkä RACI-matriisissa. Palautettu tehtävä palaa alkuperäiseen sarakkeeseensa.' }));
+  wrap.append(toolbar);
+
+  const cards = p.archivedCards.filter(c => cardVisible(p, c, c.colTitle))
+    .sort((a, b) => b.archivedAt.localeCompare(a.archivedAt));
+  if (!cards.length) {
+    wrap.append(el('p', { className: 'hint', textContent: p.archivedCards.length
+      ? 'Ei hakua tai suodatinta vastaavia arkistoituja tehtäviä.'
+      : 'Ei arkistoituja tehtäviä. Arkistoi tehtävä sen muokkausikkunasta tai valmis-sarakkeen 📦-napista.' }));
+    return;
+  }
+  const grid = el('div', { className: 'arch-grid' });
+  for (const card of cards) {
+    const restore = el('button', { textContent: '↩ Palauta', title: 'Palauta tehtävä tauluun' });
+    restore.onclick = () => restoreCard(p, card);
+    const del = el('button', { className: 'danger', textContent: '✕', title: 'Poista pysyvästi' });
+    del.onclick = () => deleteArchivedCard(p, card);
+    const colExists = p.columns.some(c => c.id === card.colId);
+    const info = el('div', { className: 'info' },
+      `Sarake: ${card.colTitle}${colExists ? '' : ' (poistettu)'}`, el('br'), `Arkistoitu ${fmtDate(card.archivedAt)}`);
+    grid.append(el('div', { className: 'arch-item' }, renderCard(card, p, true),
+      el('div', { className: 'arch-meta' }, info, restore, del)));
+  }
+  wrap.append(grid);
 }
 
 // ---------- Raahaus ----------
@@ -1535,7 +2028,7 @@ function renderPriorityPicker() {
 function renderRaciPicker() {
   const wrap = $('#cardRaci');
   wrap.innerHTML = '';
-  const people = activeProject().people;
+  const people = members(activeProject());
   if (!people.length) {
     wrap.append(el('p', { className: 'hint', textContent: 'Lisää projektiin henkilöitä (👥 Henkilöt), niin voit antaa heille rooleja.' }));
     return;
@@ -1548,7 +2041,7 @@ function renderRaciPicker() {
       b.onclick = () => { setRole(draftRaci, person.id, on ? null : r); renderRaciPicker(); };
       pick.append(b);
     }
-    wrap.append(el('div', { className: 'raci-row' }, el('span', { className: 'name', textContent: person.name }), pick));
+    wrap.append(el('div', { className: 'raci-row' }, el('span', { className: 'name', textContent: person.name, title: person.note || '' }), pick));
   }
   const warnings = raciWarnings({ raci: draftRaci });
   if (warnings.length) wrap.append(el('p', { className: 'hint', textContent: '⚠ ' + warnings.join(', ') }));
@@ -1579,6 +2072,7 @@ function openCardDialog(colId, cardId, presetDue = '') {
   renderDepsPicker();
   selectedColor = found?.card.color ?? 'transparent';
   $('#deleteCard').hidden = !found;
+  $('#archiveCardBtn').hidden = !found;
   draftRaci = { ...(found?.card.raci ?? {}) };
   draftPriority = found?.card.priority ?? '';
   renderPriorityPicker();
@@ -1636,9 +2130,14 @@ $('#deleteCard').onclick = () => {
   if (found && confirm(`Poistetaanko kortti "${found.card.title}"?`)) {
     const p = activeProject();
     found.col.cards.splice(found.index, 1);
-    for (const col of p.columns) for (const c of col.cards) if (depsOf(c).includes(found.card.id)) removeDependency(p, found.card.id, c);
+    for (const c of allCards(p)) if (depsOf(c).includes(found.card.id)) removeDependency(p, found.card.id, c);
     save(); render(); dialog.close();
   }
+};
+
+$('#archiveCardBtn').onclick = () => {
+  archiveCard(activeProject(), editing.cardId);
+  save(); render(); dialog.close();
 };
 
 // ---------- Projektit, vienti ja tuonti ----------
@@ -1652,7 +2151,7 @@ $('#addProject').onclick = () => {
   save(); render();
 };
 
-const projectData = p => ({ type: 'simple-kanban-project', version: 1, project: p });
+const projectData = archiveData;
 
 // Jokainen projekti (aktiivinen ja arkistoitu) omaksi tiedostokseen
 async function exportAllSeparate() {
@@ -1722,7 +2221,7 @@ $('#importFile').onchange = async e => {
     if (parsed.length > 1) { alert('Varmuuskopiotiedosto (koko data) täytyy tuoda yksinään.'); return; }
     const data = backups[0].data;
     if (!confirm('Tuonti korvaa kaikki nykyiset projektit ja arkiston. Jatketaanko?')) return;
-    state = normalize({ projects: data.projects, archive: data.archive, activeId: data.activeId ?? data.projects[0]?.id ?? null, view: 'board' });
+    state = normalize({ projects: data.projects, archive: data.archive, people: data.people, activeId: data.activeId ?? data.projects[0]?.id ?? null, view: 'board' });
     save(); render();
     return;
   }
@@ -1734,9 +2233,9 @@ $('#importFile').onchange = async e => {
       errors.push(`${file.name}: ei Raciban-projektitiedosto`);
       continue;
     }
-    const p = normalize({ projects: [data.project] }).projects[0];
+    if (state.projects.some(x => x.id === data.project.id) || state.archive.some(x => x.id === data.project.id)) { skipped++; continue; }
+    const p = normalize({ projects: [data.project], people: state.people }).projects[0]; // henkilöt liitetään globaaliin listaan
     delete p.archiveFile;
-    if (state.projects.some(x => x.id === p.id) || state.archive.some(x => x.id === p.id)) { skipped++; continue; }
     if (p.archivedAt) { state.archive.push(p); archived++; }
     else { state.projects.push(p); active++; state.activeId = p.id; state.archiveViewId = null; }
   }
